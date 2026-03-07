@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Student Details - Vcube Admin</title>
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+	rel="stylesheet">
+<link
+	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+	rel="stylesheet">
+
+<style>
+body {
+	background: linear-gradient(135deg, #0d6efd11, #20c99711);
+	min-height: 100vh;
+}
+
+.profile-header {
+	background: linear-gradient(135deg, #0d6efd, #20c997);
+	color: white;
+}
+
+.detail-card {
+	border-radius: 1rem;
+	box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+.photo-img {
+	width: 120px;
+	height: 120px;
+	object-fit: cover;
+	border-radius: 50%;
+	border: 4px solid white;
+}
+
+.status-online {
+	color: #20c997;
+}
+
+.status-offline {
+	color: #dc3545;
+}
+
+.table-sm th, .table-sm td {
+	padding: 0.5rem 0.75rem;
+	font-size: 0.875rem;
+}
+
+.table-card .card-header {
+	cursor: pointer;
+	background: rgba(255, 255, 255, 0.8);
+	transition: all 0.3s;
+}
+
+.table-card .card-header:hover {
+	background: rgba(255, 255, 255, 0.95);
+	transform: translateY(-2px);
+}
+
+.status-present {
+	color: #20c997;
+	font-weight: bold;
+}
+
+.status-absent {
+	color: #dc3545;
+}
+
+.status-completed {
+	color: #198754;
+	font-weight: bold;
+}
+
+.status-pending {
+	color: #ffc107;
+}
+
+/* GAUGE STYLES - FULL CIRCLE */
+.gauge-card {
+	border-radius: 25px !important;
+	background: linear-gradient(145deg, #f8f9fa, #e9ecef) !important;
+	transition: all 0.3s ease;
+}
+
+.gauge-card:hover {
+	transform: translateY(-5px);
+	box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important;
+}
+
+.gauge-container {
+	position: relative;
+	height: 250px;
+	width: 250px;
+	margin: 0 auto;
+}
+
+.gauge-canvas {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.gauge-center-text {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	text-align: center;
+	z-index: 10;
+	transition: all 0.5s ease;
+}
+
+.gauge-title {
+	font-size: 2rem !important;
+	font-weight: 900 !important;
+	line-height: 1 !important;
+	text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.gauge-label {
+	font-size: 1rem;
+	font-weight: 600;
+	margin-top: 5px;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+}
+
+.status-excellent {
+	color: #20c997 !important;
+}
+
+.status-good {
+	color: #ffc107 !important;
+}
+
+.status-average {
+	color: #fd7e14 !important;
+}
+
+.status-low {
+	color: #dc3545 !important;
+}
+</style>
+
+</head>
+<body>
+	<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+		<div class="container">
+			<a class="navbar-brand fw-bold" th:href="@{/}"> <i
+				class="fas fa-arrow-left me-2"></i>Back to Dashboard
+			</a> <span class="navbar-text"> <strong
+				th:text="'Batch: ' + ${batchNo} + ' | Roll: ' + ${rollNo}">Batch
+					| Roll</strong>
+			</span>
+		</div>
+	</nav>
+
+	<div class="container py-4">
+		<!-- Profile Header -->
+		<div class="row mb-4">
+			<div class="col-12">
+				<div class="card profile-header shadow-lg">
+					<div class="card-body">
+						<div class="row align-items-center">
+							<!-- Profile Photo Section - Google Drive Ready -->
+							<div class="col-md-2 text-center">
+								<div class="photo-container position-relative">
+									<img th:src="@{${student.photoURL}}" alt="Student Photo"
+										class="photo-img shadow-lg rounded-circle border-5 border-white"
+										style="width: 140px; height: 140px; object-fit: cover;"
+										onerror="this.src='https://via.placeholder.com/140x140?text=No+Photo'">
+								</div>
+							</div>
+							<div class="col-md-7">
+								<h2 class="mb-1 fw-bold"
+									th:text="${student.name} ?: 'Student Name'">Student Name</h2>
+								<p class="mb-2 fs-5" th:text="'Roll No: ' + ${rollNo}">Roll
+									No</p>
+								<div class="d-flex gap-3 flex-wrap">
+									<span class="badge fs-6 p-2"
+										th:classappend="${student != null and student.online} ? 'bg-success' : 'bg-danger'">
+										<i class="fas fa-circle me-1"
+										th:classappend="${student != null and student.online} ? 'status-online' : 'status-offline'"></i>
+										<span
+										th:text="${student != null and student.online} ? '🟢 Online' : '🔴 Offline'">Status</span>
+									</span> <span class="badge bg-info fs-6 p-2"
+										th:if="${student != null and student.mobile != null}">
+										<i class="fas fa-phone me-1"></i><span
+										th:text="${student.mobile}">Phone</span>
+									</span> <span class="badge bg-secondary fs-6 p-2"
+										th:if="${student != null and student.email != null}"> <i
+										class="fas fa-envelope me-1"></i><span
+										th:text="${#strings.abbreviate(student.email, 20)}">Email</span>
+									</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 🔥 FIXED GAUGE CHARTS SECTION 🔥 -->
+		<div class="row g-4 mb-5">
+			<!-- ATTENDANCE GAUGE -->
+			<div class="col-lg-4" th:if="${attendance != null}">
+				<div class="card shadow-lg border-0 text-center p-4 gauge-card"
+					style="border-radius: 25px; background: linear-gradient(145deg, #f0f8ff, #e0f0ff);">
+					<div class="card-header p-3 mb-4 text-white fw-bold"
+						style="background: linear-gradient(135deg, #20c997, #198754); border-radius: 20px;">
+						📊 Attendance</div>
+					<div class="card-body p-4">
+						<div class="gauge-container">
+							<canvas id="attendanceGauge" class="gauge-canvas" width="220"
+								height="220"></canvas>
+							<div class="gauge-center-text">
+								<div class="gauge-title">75%</div>
+								<div class="gauge-label">EXCELLENT</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- EXAM GAUGE - FIXED -->
+			<div class="col-lg-4" th:if="${exam != null}">
+				<div class="card shadow-lg border-0 text-center p-4 gauge-card"
+					style="border-radius: 25px; background: linear-gradient(145deg, #f8f9ff, #e8f4ff);">
+					<div class="card-header p-3 mb-4 text-white fw-bold"
+						style="background: linear-gradient(135deg, #0d6efd, #6610f2); border-radius: 20px;">
+						📚 Exams</div>
+					<div class="card-body p-4">
+						<div class="gauge-container">
+							<canvas id="examGauge" class="gauge-canvas" width="220"
+								height="220"></canvas>
+							<div class="gauge-center-text">
+								<div class="gauge-title">82%</div>
+								<div class="gauge-label">EXCELLENT</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- MOCK GAUGE - FIXED -->
+			<div class="col-lg-4" th:if="${mock != null}">
+				<div class="card shadow-lg border-0 text-center p-4 gauge-card"
+					style="border-radius: 25px; background: linear-gradient(145deg, #fff8f0, #ffe8d8);">
+					<div class="card-header p-3 mb-4 text-white fw-bold"
+						style="background: linear-gradient(135deg, #ffc107, #fd7e14); border-radius: 20px;">
+						💪 Mocks</div>
+					<div class="card-body p-4">
+						<div class="gauge-container">
+							<canvas id="mockGauge" class="gauge-canvas" width="220"
+								height="220"></canvas>
+							<div class="gauge-center-text">
+								<div class="gauge-title">78%</div>
+								<div class="gauge-label">EXCELLENT</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+		<!-- Your Existing Tables (UNCHANGED) -->
+		<div class="row g-4">
+			<!-- ATTENDANCE TABLE -->
+			<div class="col-12" th:if="${attendance != null}">
+				<div class="card detail-card table-card h-100">
+					<div
+						class="card-header d-flex justify-content-between align-items-center p-3"
+						onclick="toggleTable(this)">
+						<div>
+							<i class="fas fa-calendar-check me-2 text-primary"></i> <strong>📊
+								Attendance Details</strong> <span class="badge bg-success ms-2 fs-6"
+								th:text="${attendance.studentAttendancePercentage != null} ? ${attendance.studentAttendancePercentage} + '%' : '0%'">0%</span>
+						</div>
+						<i class="fas fa-chevron-down transition-icon fs-5"></i>
+					</div>
+					<div class="collapse table-container">
+						<div class="table-responsive"
+							th:if="${attendance.months != null and !attendance.months.isEmpty()}">
+							<table class="table table-sm table-hover mb-0">
+								<thead class="table-dark">
+									<tr>
+										<th>Month</th>
+										<th>Presents</th>
+										<th>Absents</th>
+										<th>Total</th>
+										<th>%</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="month, iter : ${attendance.months}">
+										<td th:text="${month}"></td>
+										<td class="status-present"
+											th:text="${attendance.totalPresents[iter.index]} ?: 0"></td>
+										<td class="status-absent"
+											th:text="${attendance.totalAbsents[iter.index]} ?: 0"></td>
+										<td class="fw-bold"
+											th:text="${(attendance.totalPresents[iter.index] ?: 0) + (attendance.totalAbsents[iter.index] ?: 0)}"></td>
+										<td class="fw-bold"><span
+											th:text="${#numbers.formatDecimal((attendance.totalPresents[iter.index] ?: 0) / ((attendance.totalPresents[iter.index] ?: 0) + (attendance.totalAbsents[iter.index] ?: 0) + 0.001) * 100, 1, 'COMMA', 1, 'COMMA')} + '%'">0%</span>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<div class="p-4 text-center text-muted"
+							th:unless="${attendance.months != null and !attendance.months.isEmpty()}">
+							No attendance data available</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- EXAM TABLE -->
+			<div class="col-lg-6" th:if="${exam != null}">
+				<div class="card detail-card table-card h-100">
+					<div
+						class="card-header d-flex justify-content-between align-items-center p-3"
+						onclick="toggleTable(this)">
+						<div>
+							<i class="fas fa-graduation-cap me-2 text-primary"></i> <strong>📚
+								Exam Marks</strong> <span class="badge bg-primary ms-2 fs-6"
+								th:text="${exam.studentPercentage != null} ? ${exam.studentPercentage} + '%' : '0%'">0%</span>
+						</div>
+						<i class="fas fa-chevron-down transition-icon fs-5"></i>
+					</div>
+					<div class="collapse table-container">
+						<div class="table-responsive"
+							th:if="${exam.dates != null and !exam.dates.isEmpty()}">
+							<table class="table table-sm table-hover mb-0">
+								<thead class="table-primary">
+									<tr>
+										<th>Date</th>
+										<th>Marks</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="date, iter : ${exam.dates}">
+										<td th:text="${date}"></td>
+										<td class="fw-bold" th:text="${exam.marks[iter.index]} ?: '-'"></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<div class="p-4 text-center text-muted"
+							th:unless="${exam.dates != null and !exam.dates.isEmpty()}">
+							No exam data available</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- MOCK TABLE -->
+			<div class="col-lg-6" th:if="${mock != null}">
+				<div class="card detail-card table-card h-100">
+					<div
+						class="card-header d-flex justify-content-between align-items-center p-3"
+						onclick="toggleTable(this)">
+						<div>
+							<i class="fas fa-dumbbell me-2 text-info"></i> <strong>💪
+								Mock Marks</strong> <span class="badge bg-info ms-2 text-dark fs-6"
+								th:text="${mock.studentPercentage != null} ? ${mock.studentPercentage} + '%' : '0%'">0%</span>
+						</div>
+						<i class="fas fa-chevron-down transition-icon fs-5"></i>
+					</div>
+					<div class="collapse table-container">
+						<div class="table-responsive"
+							th:if="${mock.dates != null and !mock.dates.isEmpty()}">
+							<table class="table table-sm table-hover mb-0">
+								<thead class="table-info">
+									<tr>
+										<th>Date</th>
+										<th>Marks</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="date, iter : ${mock.dates}">
+										<td th:text="${date}"></td>
+										<td class="fw-bold" th:text="${mock.marks[iter.index]} ?: '-'"></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<div class="p-4 text-center text-muted"
+							th:unless="${mock.dates != null and !mock.dates.isEmpty()}">
+							No mock data available</div>
+					</div>
+				</div>
+			</div>
+			<!-- MOCK-Exam TABLE -->
+			<div class="col-lg-6" th:if="${mockExam != null}">
+				<div class="card detail-card table-card h-100">
+					<div
+						class="card-header d-flex justify-content-between align-items-center p-3"
+						onclick="toggleTable(this)">
+						<div>
+							<i class="fas fa-dumbbell me-2 text-info"></i> <strong>💪
+								Mock-Exam Marks</strong> <span class="badge bg-info ms-2 text-dark fs-6"
+								th:text="${mockExam.studentPercentage != null} ? ${mockExam.studentPercentage} + '%' : '0%'">0%</span>
+						</div>
+						<i class="fas fa-chevron-down transition-icon fs-5"></i>
+					</div>
+					<div class="collapse table-container">
+						<div class="table-responsive"
+							th:if="${mockExam.dates != null and !mockExam.dates.isEmpty()}">
+							<table class="table table-sm table-hover mb-0">
+								<thead class="table-info">
+									<tr>
+										<th>Date</th>
+										<th>Marks</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="date, iter : ${mockExam.dates}">
+										<td th:text="${date}"></td>
+										<td class="fw-bold"
+											th:text="${mockExam.marks[iter.index]} ?: '-'"></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<div class="p-4 text-center text-muted"
+							th:unless="${mockExam.dates != null and !mockExam.dates.isEmpty()}">
+							No mock-exam data available</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Gut-Exam TABLE -->
+			<div class="col-lg-6" th:if="${gutExam != null}">
+				<div class="card detail-card table-card h-100">
+					<div
+						class="card-header d-flex justify-content-between align-items-center p-3"
+						onclick="toggleTable(this)">
+						<div>
+							<i class="fas fa-dumbbell me-2 text-info"></i> <strong>💪
+								GUT-Exam Marks</strong> <span class="badge bg-info ms-2 text-dark fs-6"
+								th:text="${gutExam.studentPercentage != null} ? ${gutExam.studentPercentage} + '%' : '0%'">0%</span>
+						</div>
+						<i class="fas fa-chevron-down transition-icon fs-5"></i>
+					</div>
+					<div class="collapse table-container">
+						<div class="table-responsive"
+							th:if="${gutExam.dates != null and !gutExam.dates.isEmpty()}">
+							<table class="table table-sm table-hover mb-0">
+								<thead class="table-info">
+									<tr>
+										<th>Date</th>
+										<th>Marks</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="date, iter : ${gutExam.dates}">
+										<td th:text="${date}"></td>
+										<td class="fw-bold"
+											th:text="${gutExam.marks[iter.index]} ?: '-'"></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<div class="p-4 text-center text-muted"
+							th:unless="${gutExam.dates != null and !gutExam.dates.isEmpty()}">
+							No gut-exam data available</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Error Alert -->
+	<div class="row mt-4" th:if="${error}">
+		<div class="col-12">
+			<div class="alert alert-warning">
+				<i class="fas fa-exclamation-triangle me-2"></i><span
+					th:text="${error}">Error</span>
+			</div>
+		</div>
+	</div>
+
+
+	<!-- 1. Chart.js CDN -->
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+	<!-- 2. MAIN GAUGE CHARTS SCRIPT (Thymeleaf Fixed) -->
+	<script th:inline="javascript">
+/*<![CDATA[*/
+document.addEventListener('DOMContentLoaded', function() {
+    const attendancePct = /*[[${attendance != null ? attendance.studentAttendancePercentage ?: 0 : 0}]]*/ 0;
+    const examPct = /*[[${exam != null ? exam.studentPercentage ?: 0 : 0}]]*/ 0;
+    const mockPct = /*[[${mock != null ? mock.studentPercentage ?: 0 : 0}]]*/ 0;
+
+    function getGaugeConfig(pct) {
+        let color, label;
+        if (pct >= 75) { color = '#20c997'; label = 'EXCELLENT'; }
+        else if (pct >= 65) { color = '#ffc107'; label = 'GOOD'; }
+        else if (pct >= 45) { color = '#fd7e14'; label = 'AVERAGE'; }
+        else { color = '#dc3545'; label = 'LOW'; }
+        return { color, label };
+    }
+
+    // ATTENDANCE GAUGE
+    const attendanceGauge = document.getElementById('attendanceGauge');
+    if (attendanceGauge) {
+        const config = getGaugeConfig(attendancePct);
+        const ctx1 = attendanceGauge.getContext('2d');
+        new Chart(ctx1, {
+            type: 'doughnut',
+            data: { datasets: [{ data: [attendancePct, 100-attendancePct], backgroundColor: [config.color, '#f8f9fa'], borderWidth: 12, borderColor: '#fff', cutout: '70%' }] },
+            options: { responsive: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, animation: { animateRotate: true, duration: 2500 } }
+        });
+        const attendanceText = attendanceGauge.parentElement.querySelector('.gauge-center-text');
+        if (attendanceText) {
+            attendanceText.className = `gauge-center-text status-${config.label.toLowerCase()}`;
+            attendanceText.querySelector('.gauge-title').textContent = attendancePct + '%';
+            attendanceText.querySelector('.gauge-label').textContent = config.label;
+        }
+    }
+
+    // EXAM GAUGE
+    const examGauge = document.getElementById('examGauge');
+    if (examGauge) {
+        const config = getGaugeConfig(examPct);
+        const ctx2 = examGauge.getContext('2d');
+        new Chart(ctx2, {
+            type: 'doughnut',
+            data: { datasets: [{ data: [examPct, 100-examPct], backgroundColor: [config.color, '#f8f9fa'], borderWidth: 12, borderColor: '#fff', cutout: '70%' }] },
+            options: { responsive: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, animation: { animateRotate: true, duration: 2500 } }
+        });
+        const examText = examGauge.parentElement.querySelector('.gauge-center-text');
+        if (examText) {
+            examText.className = `gauge-center-text status-${config.label.toLowerCase()}`;
+            examText.querySelector('.gauge-title').textContent = examPct + '%';
+            examText.querySelector('.gauge-label').textContent = config.label;
+        }
+    }
+
+    // MOCK GAUGE
+    const mockGauge = document.getElementById('mockGauge');
+    if (mockGauge) {
+        const config = getGaugeConfig(mockPct);
+        const ctx3 = mockGauge.getContext('2d');
+        new Chart(ctx3, {
+            type: 'doughnut',
+            data: { datasets: [{ data: [mockPct, 100-mockPct], backgroundColor: [config.color, '#f8f9fa'], borderWidth: 12, borderColor: '#fff', cutout: '70%' }] },
+            options: { responsive: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, animation: { animateRotate: true, duration: 2500 } }
+        });
+        const mockText = mockGauge.parentElement.querySelector('.gauge-center-text');
+        if (mockText) {
+            mockText.className = `gauge-center-text status-${config.label.toLowerCase()}`;
+            mockText.querySelector('.gauge-title').textContent = mockPct + '%';
+            mockText.querySelector('.gauge-label').textContent = config.label;
+        }
+    }
+});
+/*]]>*/
+</script>
+
+	<!-- 3. YOUR EXISTING TABLE TOGGLE FUNCTION -->
+	<script>
+function toggleTable(header) {
+    const content = header.parentElement.parentElement.querySelector('.table-container');
+    const icon = header.querySelector('.transition-icon');
+    content.classList.toggle('show');
+    icon.classList.toggle('fa-chevron-down');
+    icon.classList.toggle('fa-chevron-up');
+}
+</script>
+
+	<!-- 4. BOOTSTRAP JS (Keep this last) -->
+	<script
+		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
