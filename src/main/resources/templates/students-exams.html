@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Students Exams Details</title>
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+	rel="stylesheet">
+	<link
+	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+	rel="stylesheet">
+	    <link href="../styles.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+		<div class="container">
+			<a class="navbar-brand fw-bold" th:href="@{/}"> <i
+				class="fas fa-arrow-left me-2"></i>Back to Dashboard
+			</a>
+		</div>
+	</nav>
+	<div class="container mt-4">
+ <!-- loading layer -->
+    <div id="loader" class="loading-overlay">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+		<div class="card shadow">
+			<div class="card-header bg-warning text-white">
+				<h4 class="mb-0">Students Exam Details</h4>
+			</div>
+			<div class="card-body">
+
+				<!-- Batch select form -->
+				<form th:action="@{/students-exams}" method="post" onsubmit="showLoading()"
+					class="row g-3 mb-3">
+					<div class="col-md-4">
+						<label class="form-label fw-bold">Batch</label> <select
+							class="form-select" name="batchNo">
+							<option value="" selected disabled>Select batch</option>
+									<option th:each="batch : ${batches}" th:value="${batch}"
+										th:text="${batch}"></option>
+						</select>
+					</div>
+					<div class="col-md-2 d-flex align-items-end">
+						<button type="submit" class="btn btn-primary w-100">Load</button>
+					</div>
+				</form>
+
+				<!-- Show total mocks (batch wise) if available -->
+				<div th:if="${studentsExams != null and !studentsExams.isEmpty()}"
+					class="mb-3">
+					<span class="badge bg-info text-dark"> Total Exams (Batch) :
+						<span th:text="${studentsExams[0].totalExams}"></span>
+					</span>
+				</div>
+
+				<!-- Table -->
+				<div class="table-responsive">
+					<table
+						class="table table-striped table-bordered table-sm align-middle">
+						<thead class="table-dark">
+							<tr>
+								<th>s/no</th>
+								<th>Roll No</th>
+								<th>Name</th>
+								<th>Std-Exams</th>
+								<th>Total-Exams</th>
+								<th>Std-marks</th>
+								<th>Total-marks</th>
+								<th>Percentage</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:if="${studentsExams == null or studentsExams.isEmpty()}">
+								<td colspan="6" class="text-center text-muted">No data.
+									Please select batch and click Load.</td>
+							</tr>
+							<tr th:each="m, stat : ${studentsExams}">
+								<td th:text="${stat.index + 1}"></td>
+								<td th:text="${m.student.rollNo}"></td>
+								<td th:text="${m.student.name}"></td>
+								<td th:text="${m.studentTotalExams}"></td>
+								<td th:text="${studentsExams[0].totalExams}"></td>
+								<td th:text="${m.StudentTotalExamsMarks}"></td>
+								<td th:text="${studentsExams[0].totalExamsMarks}"></td>
+								<td th:text="${m.StudentPercentage}+ '%'"></td>
+							</tr>
+						</tbody>
+
+					</table>
+				</div>
+
+			</div>
+		</div>
+	</div>
+
+	<script
+		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+		<script src="../appScript.js"></script>
+</body>
+</html>
