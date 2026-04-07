@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head_fragment('Batch Reports - Vcube Admin')}">
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar Fragment -->
+        <th:block th:replace="~{fragments/sidebar :: sidebar_fragment}"></th:block>
+        
+        <!-- Main Content Area -->
+        <div id="content">
+            <!-- Header Fragment -->
+            <th:block th:replace="~{fragments/header :: header_fragment('Batch Reports')}"></th:block>
+            
+            <!-- Page Content -->
+            <div class="container-fluid p-4 page-enter">
+                
+                <!-- Report Type Tabs -->
+                <div class="card glass-card border-0 mb-4">
+                    <div class="card-body p-2">
+                        <div class="d-flex flex-wrap gap-2" id="reportTypeTabs">
+                            <button class="report-tab-btn active" data-type="attendance" data-sheet="attendance">
+                                <i class="lucide-user-check me-1"></i> Attendance
+                            </button>
+                            <button class="report-tab-btn" data-type="exam" data-sheet="exam">
+                                <i class="lucide-book-open me-1"></i> Exam Marks
+                            </button>
+                            <button class="report-tab-btn" data-type="mock" data-sheet="mock">
+                                <i class="lucide-pen-tool me-1"></i> Mock Marks
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Panel -->
+                <div class="card glass-card border-0 mb-4">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-4 d-flex align-items-center">
+                            <i class="lucide-filter me-2 text-primary"></i> Report Filters
+                        </h5>
+                        <div class="row g-3 align-items-end">
+                            <!-- Batch Selector -->
+                            <div class="col-md-3 col-sm-6">
+                                <label for="reportBatch" class="form-label small fw-bold text-muted">Select Batch</label>
+                                <select class="form-select shadow-sm" id="reportBatch">
+                                    <option value="" disabled selected>Select batch...</option>
+                                    <option value="ALL">📊 All Batches</option>
+                                    <option th:each="batch : ${batches}" th:value="${batch}" th:text="${batch}"></option>
+                                </select>
+                            </div>
+
+                            <!-- Filter Mode Toggle -->
+                            <div class="col-md-2 col-sm-6">
+                                <label class="form-label small fw-bold text-muted">Filter Mode</label>
+                                <select class="form-select shadow-sm" id="filterMode">
+                                    <option value="month" selected>Month / Year</option>
+                                    <option value="range">Custom Range</option>
+                                </select>
+                            </div>
+
+                            <!-- Month/Year Controls (dynamically populated) -->
+                            <div class="col-md-3 col-sm-6" id="monthYearGroup">
+                                <label for="reportMonthYear" class="form-label small fw-bold text-muted">Month & Year</label>
+                                <select class="form-select shadow-sm" id="reportMonthYear">
+                                    <option value="" disabled selected>Select batch first...</option>
+                                </select>
+                            </div>
+
+                            <!-- Custom Range Controls (hidden by default) -->
+                            <div class="col-md-2 col-sm-6 d-none" id="startDateGroup">
+                                <label for="reportStartDate" class="form-label small fw-bold text-muted">Start Date</label>
+                                <input type="date" class="form-control shadow-sm" id="reportStartDate">
+                            </div>
+                            <div class="col-md-2 col-sm-6 d-none" id="endDateGroup">
+                                <label for="reportEndDate" class="form-label small fw-bold text-muted">End Date</label>
+                                <input type="date" class="form-control shadow-sm" id="reportEndDate">
+                            </div>
+
+                            <!-- Result Filter (Regular/Pass/Fail) -->
+                            <div class="col-md-2 col-sm-6">
+                                <label for="resultFilter" class="form-label small fw-bold text-muted">Result Filter</label>
+                                <select class="form-select shadow-sm" id="resultFilter">
+                                    <option value="all" selected>All Students</option>
+                                    <option value="pass" class="filter-marks d-none">Pass (≥50%)</option>
+                                    <option value="fail" class="filter-marks d-none">Fail (<50%)</option>
+                                    <option value="regular" class="filter-attendance">Regular (≥75%)</option>
+                                    <option value="irregular" class="filter-attendance">Irregular (<75%)</option>
+                                </select>
+                            </div>
+
+                            <!-- Generate Button -->
+                            <div class="col-md-2 col-sm-12">
+                                <button class="btn btn-primary fw-bold w-100 shadow-sm" id="generateReportBtn" disabled>
+                                    <i class="lucide-bar-chart-2 me-2" style="width:18px;"></i> Generate
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Skeleton Loading State -->
+                <div id="reportLoading" class="d-none">
+                    <!-- Summary Cards Skeleton -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-lg-3 col-md-6" th:each="i : ${#numbers.sequence(1, 4)}">
+                            <div class="skeleton-summary-card shadow-sm border-0">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="skeleton sk-circle me-3"></div>
+                                    <div class="skeleton sk-title mb-0" style="width: 100px;"></div>
+                                </div>
+                                <div class="skeleton sk-title" style="width: 60px; height: 32px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Skeleton -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-lg-5 col-md-6">
+                            <div class="card glass-card border-0 p-4">
+                                <div class="skeleton sk-title mb-4"></div>
+                                <div class="skeleton skeleton-chart-box" style="border-radius: 50%; width: 250px; height: 250px; margin: 0 auto;"></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-7 col-md-6">
+                            <div class="card glass-card border-0 p-4">
+                                <div class="skeleton sk-title mb-4"></div>
+                                <div class="skeleton skeleton-chart-box"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table Skeleton -->
+                    <div class="card glass-card border-0 p-4">
+                        <div class="d-flex justify-content-between mb-4">
+                            <div class="skeleton sk-title" style="width: 200px;"></div>
+                            <div class="skeleton sk-button"></div>
+                        </div>
+                        <div class="skeleton sk-table-row" th:each="i : ${#numbers.sequence(1, 8)}"></div>
+                    </div>
+
+                    <div class="text-center py-4">
+                        <p class="text-muted fw-bold" id="loadingText">Fetching data from Google Sheets...</p>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="text-center py-5">
+                    <div style="font-size: 4rem; opacity: 0.3; margin-bottom: 1rem;">📊</div>
+                    <h5 class="text-muted fw-bold">Select a batch and time period</h5>
+                    <p class="text-muted small">Choose a batch and month/year or custom date range to generate the report.</p>
+                </div>
+
+                <!-- Error State -->
+                <div id="errorState" class="d-none text-center py-5">
+                    <div class="error-icon-animated">
+                        <div class="error-circle">
+                            <i class="lucide-alert-circle"></i>
+                        </div>
+                    </div>
+                    <h4 class="text-danger fw-bold mb-2">Sorry! Something went wrong.</h4>
+                    <p class="text-muted" id="errorText">Unable to fetch the report data.</p>
+                    <button class="btn btn-outline-secondary btn-sm mt-3" onclick="$('#errorState').addClass('d-none'); $('#emptyState').removeClass('d-none');">Try Again</button>
+                </div>
+
+                <!-- Report Content (hidden until data arrives) -->
+                <div id="reportContent" class="d-none">
+
+                    <!-- Summary Cards -->
+                    <div class="row g-4 mb-4" id="summaryCards">
+                        <!-- Card 1 -->
+                        <div class="col-lg-3 col-md-6">
+                            <div class="card glass-card h-100 border-0 summary-card-1">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="p-2 rounded-3 me-3 summary-icon-1">
+                                            <i class="lucide-users" id="cardIcon1"></i>
+                                        </div>
+                                        <span class="small fw-bold text-muted text-uppercase" id="cardLabel1">Total Students</span>
+                                    </div>
+                                    <h2 class="fw-bold mb-0" id="cardValue1">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card 2 -->
+                        <div class="col-lg-3 col-md-6">
+                            <div class="card glass-card h-100 border-0 summary-card-2">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="p-2 rounded-3 me-3 summary-icon-2">
+                                            <i class="lucide-user-check" id="cardIcon2"></i>
+                                        </div>
+                                        <span class="small fw-bold text-muted text-uppercase" id="cardLabel2">Regular (≥75%)</span>
+                                    </div>
+                                    <h2 class="fw-bold mb-0" id="cardValue2">0</h2>
+                                    <small class="text-muted" id="cardSub2">0%</small>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card 3 -->
+                        <div class="col-lg-3 col-md-6">
+                            <div class="card glass-card h-100 border-0 summary-card-3">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="p-2 rounded-3 me-3 summary-icon-3">
+                                            <i class="lucide-user-x" id="cardIcon3"></i>
+                                        </div>
+                                        <span class="small fw-bold text-muted text-uppercase" id="cardLabel3">Irregular (&lt;75%)</span>
+                                    </div>
+                                    <h2 class="fw-bold mb-0" id="cardValue3">0</h2>
+                                    <small class="text-muted" id="cardSub3">0%</small>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card 4 -->
+                        <div class="col-lg-3 col-md-6">
+                            <div class="card glass-card h-100 border-0 summary-card-4">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="p-2 rounded-3 me-3 summary-icon-4">
+                                            <i class="lucide-calendar-days" id="cardIcon4"></i>
+                                        </div>
+                                        <span class="small fw-bold text-muted text-uppercase" id="cardLabel4">Working Days</span>
+                                    </div>
+                                    <h2 class="fw-bold mb-0" id="cardValue4">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="row g-4 mb-4">
+                        <!-- Pie/Doughnut Chart -->
+                        <div class="col-lg-5 col-md-6">
+                            <div class="card glass-card border-0 h-100">
+                                <div class="card-body p-4">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center" id="pieChartTitle">
+                                        <i class="lucide-pie-chart me-2 text-primary"></i> Regular vs Irregular
+                                    </h6>
+                                    <div style="position:relative; max-height:350px; display:flex; justify-content:center;">
+                                        <canvas id="pieChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Bar Chart -->
+                        <div class="col-lg-7 col-md-6">
+                            <div class="card glass-card border-0 h-100">
+                                <div class="card-body p-4">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center" id="barChartTitle">
+                                        <i class="lucide-bar-chart me-2 text-info"></i> Per-Student Data
+                                    </h6>
+                                    <div style="position:relative; max-height:350px; overflow-x:auto;">
+                                        <canvas id="barChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Batch Tab Bar (only for ALL batches mode) -->
+                    <div id="batchTabBar" class="d-none mb-3">
+                        <div class="card glass-card border-0">
+                            <div class="card-body p-3">
+                                <div class="d-flex flex-wrap gap-2" id="batchTabs"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Data Table -->
+                    <div class="card glass-card border-0 mb-4">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold mb-0 d-flex align-items-center" id="tableTitle">
+                                    <i class="lucide-table me-2 text-secondary"></i> Student Details
+                                </h6>
+                                <span class="badge bg-primary" id="tableCount">0 students</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle" id="reportTable">
+                                    <thead id="reportTableHead">
+                                        <!-- Dynamic header -->
+                                    </thead>
+                                    <tbody id="reportTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts Fragment -->
+    <th:block th:replace="~{fragments/scripts :: scripts_fragment}"></th:block>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Report Page Script -->
+    <script>
+    $(document).ready(function() {
+        // ═══════════════════════════════════════════
+        // Filtering Logic
+        // ═══════════════════════════════════════════
+        $('#resultFilter').on('change', function() {
+            if (!lastFetchedData) return;
+            
+            if (currentReportType === 'attendance') {
+                if (Array.isArray(lastFetchedData)) {
+                    // ALL mode - batch tabs already handle switching, but lets re-render current tab
+                    const activeBatch = $('#batchTabs button.btn-primary').text().split(' ')[0].trim();
+                    const batchData = lastFetchedData.find(b => b.batch === activeBatch);
+                    renderAttendanceReport(batchData);
+                } else {
+                    renderAttendanceReport(lastFetchedData);
+                }
+            } else {
+                renderMarksReport(lastFetchedData);
+            }
+        });
+
+        // ═══════════════════════════════════════════
+        // DOM references
+        // ═══════════════════════════════════════════
+        const batchSelect = $('#reportBatch');
+        const filterMode = $('#filterMode');
+        const monthYearSelect = $('#reportMonthYear');
+        const startDateInput = $('#reportStartDate');
+        const endDateInput = $('#reportEndDate');
+        const resultFilter = $('#resultFilter');
+        const generateBtn = $('#generateReportBtn');
+        const loadingDiv = $('#reportLoading');
+        const emptyState = $('#emptyState');
+        const errorState = $('#errorState');
+        const reportContent = $('#reportContent');
+        
+        let lastFetchedData = null; // Store current batch/report data for filtering
+
+        let pieChartInstance = null;
+        let barChartInstance = null;
+        let allBatchesData = null;
+        let currentReportType = 'attendance'; // 'attendance', 'exam', 'mock'
+        let availableDatesCache = {}; // cache per batch+type
+
+        // ═══════════════════════════════════════════
+        // Report Type Tab Switching
+        // ═══════════════════════════════════════════
+        $('.report-tab-btn').click(function() {
+            $('.report-tab-btn').removeClass('active');
+            $(this).addClass('active');
+            currentReportType = $(this).data('type');
+            
+            // Reset report and reload available months for new type
+            reportContent.addClass('d-none');
+            errorState.addClass('d-none');
+            emptyState.removeClass('d-none');
+            
+            const batch = batchSelect.val();
+            
+            // Toggle filter visibility
+            if (currentReportType === 'attendance') {
+                $('.filter-attendance').removeClass('d-none');
+                $('.filter-marks').addClass('d-none');
+            } else {
+                $('.filter-attendance').addClass('d-none');
+                $('.filter-marks').removeClass('d-none');
+            }
+            resultFilter.val('all'); // Reset filter on tab change
+
+            if (batch && batch !== 'ALL') {
+                loadAvailableDates(batch, currentReportType);
+            }
+        });
+
+        // ═══════════════════════════════════════════
+        // Filter Mode Toggle
+        // ═══════════════════════════════════════════
+        filterMode.change(function() {
+            if ($(this).val() === 'month') {
+                $('#monthYearGroup').removeClass('d-none');
+                $('#startDateGroup, #endDateGroup').addClass('d-none');
+            } else {
+                $('#monthYearGroup').addClass('d-none');
+                $('#startDateGroup, #endDateGroup').removeClass('d-none');
+            }
+        });
+
+        // ═══════════════════════════════════════════
+        // Batch Selection → Load Available Dates
+        // ═══════════════════════════════════════════
+        batchSelect.change(function() {
+            const batch = $(this).val();
+            generateBtn.prop('disabled', !batch);
+            
+            if (batch && batch !== 'ALL') {
+                loadAvailableDates(batch, currentReportType);
+            } else if (batch === 'ALL') {
+                // For ALL batches, we can't query individual dates easily
+                monthYearSelect.html('<option value="" disabled selected>Select month...</option>');
+                // Populate with current year months
+                const now = new Date();
+                for (let m = 1; m <= 12; m++) {
+                    const names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                    monthYearSelect.append(`<option value="${m}-${now.getFullYear()}">${names[m-1]} ${now.getFullYear()}</option>`);
+                }
+            }
+        });
+
+        // ═══════════════════════════════════════════
+        // Load Available Dates from API
+        // ═══════════════════════════════════════════
+        function loadAvailableDates(batch, sheetType) {
+            const cacheKey = batch + '-' + sheetType;
+            if (availableDatesCache[cacheKey]) {
+                populateMonthYearDropdown(availableDatesCache[cacheKey]);
+                return;
+            }
+
+            monthYearSelect.html('<option value="" disabled selected>Loading...</option>').prop('disabled', true);
+
+            $.ajax({
+                url: '/api/batch-available-dates',
+                data: { batch: batch, sheetType: sheetType },
+                success: function(data) {
+                    availableDatesCache[cacheKey] = data;
+                    populateMonthYearDropdown(data);
+                },
+                error: function() {
+                    monthYearSelect.html('<option value="" disabled>Error loading dates</option>');
+                    monthYearSelect.prop('disabled', false);
+                }
+            });
+        }
+
+        function populateMonthYearDropdown(data) {
+            monthYearSelect.html('<option value="" disabled selected>Select period...</option>');
+            
+            if (data.months && data.months.length > 0) {
+                data.months.forEach(function(item) {
+                    monthYearSelect.append(`<option value="${item.month}-${item.year}">${item.label}</option>`);
+                });
+                // Auto-select last month
+                const last = data.months[data.months.length - 1];
+                monthYearSelect.val(last.month + '-' + last.year);
+            } else {
+                monthYearSelect.html('<option value="" disabled selected>No data available</option>');
+            }
+            
+            // Set date input bounds
+            if (data.minDate) startDateInput.attr('min', data.minDate);
+            if (data.maxDate) {
+                endDateInput.attr('max', data.maxDate);
+                startDateInput.attr('max', data.maxDate);
+                endDateInput.attr('min', data.minDate);
+            }
+            
+            monthYearSelect.prop('disabled', false);
+        }
+
+        // ═══════════════════════════════════════════
+        // Generate Report
+        // ═══════════════════════════════════════════
+        generateBtn.click(function() {
+            const batch = batchSelect.val();
+            if (!batch) return;
+
+            let params = { batch: batch };
+            if (filterMode.val() === 'month') {
+                const mv = monthYearSelect.val();
+                if (!mv) {
+                    alert('Please select a month/year period.');
+                    return;
+                }
+                const parts = mv.split('-');
+                params.month = parts[0];
+                params.year = parts[1];
+            } else {
+                params.startDate = startDateInput.val();
+                params.endDate = endDateInput.val();
+                if (!params.startDate || !params.endDate) {
+                    alert('Please select both start and end dates.');
+                    return;
+                }
+            }
+
+            // Determine API URL based on report type
+            let apiUrl;
+            switch(currentReportType) {
+                case 'exam': apiUrl = '/api/batch-exam-report'; break;
+                case 'mock': apiUrl = '/api/batch-mock-report'; break;
+                default: apiUrl = '/api/batch-attendance-report'; break;
+            }
+
+            // Show loading
+            emptyState.addClass('d-none');
+            errorState.addClass('d-none');
+            reportContent.addClass('d-none');
+            loadingDiv.removeClass('d-none');
+            $('#loadingText').text('Fetching ' + currentReportType + ' data from Google Sheets...');
+
+            $.ajax({
+                url: apiUrl,
+                type: 'GET',
+                data: params,
+                success: function(data) {
+                    loadingDiv.addClass('d-none');
+                    lastFetchedData = data; // Store globally for filtering
+
+                    if (currentReportType === 'attendance') {
+                        handleAttendanceResponse(data);
+                    } else {
+                        handleMarksResponse(data);
+                    }
+                },
+                error: function(xhr) {
+                    loadingDiv.addClass('d-none');
+                    errorState.removeClass('d-none');
+                    let errorType = xhr.status ? `Error ${xhr.status}: ` : 'Connection Error: ';
+                    let errorMsg = xhr.responseText || 'Unable to connect to Google Sheets API.';
+                    if (errorMsg.includes('<html')) errorMsg = 'Server encountered an unexpected error.';
+                    $('#errorText').text(errorType + errorMsg);
+                    lucide.createIcons(); // Re-render icon in errorState if needed
+                }
+            });
+        });
+
+        // ═══════════════════════════════════════════
+        // Handle Attendance Response
+        // ═══════════════════════════════════════════
+        function handleAttendanceResponse(data) {
+            if (Array.isArray(data)) {
+                allBatchesData = data;
+                if (data.length === 0) { emptyState.removeClass('d-none'); return; }
+                showBatchTabs(data);
+                renderAttendanceReport(data[0]);
+            } else {
+                allBatchesData = null;
+                $('#batchTabBar').addClass('d-none');
+                renderAttendanceReport(data);
+            }
+            reportContent.removeClass('d-none');
+        }
+
+        // ═══════════════════════════════════════════
+        // Handle Marks (Exam/Mock) Response
+        // ═══════════════════════════════════════════
+        function handleMarksResponse(data) {
+            if (!data || data.totalStudents === 0) {
+                emptyState.removeClass('d-none');
+                return;
+            }
+            allBatchesData = null;
+            $('#batchTabBar').addClass('d-none');
+            renderMarksReport(data);
+            reportContent.removeClass('d-none');
+        }
+
+        // ═══════════════════════════════════════════
+        // Show Batch Tabs (ALL mode)
+        // ═══════════════════════════════════════════
+        function showBatchTabs(reports) {
+            const tabBar = $('#batchTabBar');
+            const tabsContainer = $('#batchTabs');
+            tabsContainer.empty();
+
+            reports.forEach((r, idx) => {
+                const btn = $(`<button class="btn ${idx === 0 ? 'btn-primary' : 'btn-outline-primary'} btn-sm fw-bold px-3">
+                    ${r.batch} <span class="badge bg-white text-primary ms-1">${r.totalStudents}</span>
+                </button>`);
+                btn.click(function() {
+                    tabsContainer.find('button').removeClass('btn-primary').addClass('btn-outline-primary');
+                    $(this).removeClass('btn-outline-primary').addClass('btn-primary');
+                    renderAttendanceReport(r);
+                });
+                tabsContainer.append(btn);
+            });
+            tabBar.removeClass('d-none');
+        }
+
+        // ═══════════════════════════════════════════
+        // Render Attendance Report
+        // ═══════════════════════════════════════════
+        function renderAttendanceReport(data) {
+            const total = data.totalStudents;
+            const regular = data.regularCount;
+            const irregular = data.irregularCount;
+            
+            // Apply filtering to student list for the table
+            let filteredStudents = data.students;
+            const filterVal = $('#resultFilter').val();
+            if (filterVal === 'regular') filteredStudents = data.students.filter(s => s.regular);
+            if (filterVal === 'irregular') filteredStudents = data.students.filter(s => !s.regular);
+
+            // Update summary cards for attendance
+            updateSummaryCards({
+                card1: { label: 'Total Students', value: total, icon: 'lucide-users', colorClass: 'info' },
+                card2: { label: 'Regular (≥75%)', value: regular, sub: Math.round(regular/total*100) + '% of batch', icon: 'lucide-user-check', colorClass: 'success' },
+                card3: { label: 'Irregular (<75%)', value: irregular, sub: Math.round(irregular/total*100) + '% of batch', icon: 'lucide-user-x', colorClass: 'danger' },
+                card4: { label: 'Working Days', value: data.totalWorkingDays, icon: 'lucide-calendar-days', colorClass: 'warning' }
+            });
+
+            // Charts
+            renderAttendancePieChart(regular, irregular);
+            renderAttendanceBarChart(data.students);
+
+            // Table
+            renderAttendanceTable(filteredStudents);
+
+            // Chart titles
+            $('#pieChartTitle').html('<i class="lucide-pie-chart me-2 text-primary"></i> Regular vs Irregular');
+            $('#barChartTitle').html('<i class="lucide-bar-chart me-2 text-info"></i> Per-Student Attendance');
+            $('#tableTitle').html('<i class="lucide-table me-2 text-secondary"></i> Student Attendance Details');
+        }
+
+        // ═══════════════════════════════════════════
+        // Render Marks Report (Exam/Mock)
+        // ═══════════════════════════════════════════
+        function renderMarksReport(data) {
+            const total = data.totalStudents;
+            const pass = data.passCount || 0;
+            const fail = data.failCount || 0;
+            const avg = data.averagePercentage || 0;
+            const exams = data.totalExams || 0;
+            const typeLabel = currentReportType === 'exam' ? 'Exam' : 'Mock';
+            const typeIcon = currentReportType === 'exam' ? 'lucide-book-open' : 'lucide-pen-tool';
+
+            updateSummaryCards({
+                card1: { label: 'Total Students', value: total, icon: 'lucide-users', colorClass: 'info' },
+                card2: { label: 'Pass (≥50%)', value: pass, sub: total > 0 ? Math.round(pass/total*100) + '% of batch' : '0%', icon: 'lucide-check-circle', colorClass: 'success' },
+                card3: { label: 'Fail (<50%)', value: fail, sub: total > 0 ? Math.round(fail/total*100) + '% of batch' : '0%', icon: 'lucide-x-circle', colorClass: 'danger' },
+                card4: { label: typeLabel + 's Conducted', value: exams, icon: typeIcon, colorClass: 'warning' }
+            });
+
+            // Apply filtering to student list for the table
+            let filteredStudents = data.students;
+            const filterVal = $('#resultFilter').val();
+            if (filterVal === 'pass') filteredStudents = data.students.filter(s => s.passed);
+            if (filterVal === 'fail') filteredStudents = data.students.filter(s => !s.passed);
+
+            // Charts
+            renderMarksPieChart(pass, fail);
+            renderMarksBarChart(data.students); // Keep chart showing full batch for context
+
+            // Table
+            renderMarksTable(filteredStudents, typeLabel);
+
+            // Titles
+            $('#pieChartTitle').html(`<i class="lucide-pie-chart me-2 text-primary"></i> Pass vs Fail`);
+            $('#barChartTitle').html(`<i class="lucide-bar-chart me-2 text-info"></i> Per-Student ${typeLabel} Marks`);
+            $('#tableTitle').html(`<i class="lucide-table me-2 text-secondary"></i> ${typeLabel} Details`);
+        }
+
+        // ═══════════════════════════════════════════
+        // Summary Cards Helper
+        // ═══════════════════════════════════════════
+        function updateSummaryCards(cards) {
+            ['card1','card2','card3','card4'].forEach(function(key, i) {
+                const c = cards[key];
+                $(`#cardLabel${i+1}`).text(c.label);
+                $(`#cardValue${i+1}`).text(c.value).removeClass('text-success text-danger text-info text-warning').addClass('text-' + c.colorClass);
+                $(`#cardSub${i+1}`).text(c.sub || '');
+            });
+        }
+
+        // ═══════════════════════════════════════════
+        // Chart Helpers
+        // ═══════════════════════════════════════════
+        function getChartColors() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            return {
+                isDark,
+                textColor: isDark ? '#e2e8f0' : '#343a40',
+                gridColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+                tooltipBg: isDark ? '#1e293b' : '#ffffff',
+                tooltipBorder: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                success: isDark ? 'rgba(52, 211, 153, 0.85)' : 'rgba(25, 135, 84, 0.85)',
+                successBorder: isDark ? 'rgba(52, 211, 153, 1)' : 'rgba(25, 135, 84, 1)',
+                danger: isDark ? 'rgba(251, 113, 133, 0.85)' : 'rgba(220, 53, 69, 0.85)',
+                dangerBorder: isDark ? 'rgba(251, 113, 133, 1)' : 'rgba(220, 53, 69, 1)',
+                info: isDark ? 'rgba(96, 165, 250, 0.75)' : 'rgba(13, 110, 253, 0.75)',
+                infoBorder: isDark ? 'rgba(96, 165, 250, 1)' : 'rgba(13, 110, 253, 1)',
+                warning: isDark ? 'rgba(251, 191, 36, 0.75)' : 'rgba(255, 193, 7, 0.75)',
+                warningBorder: isDark ? 'rgba(251, 191, 36, 1)' : 'rgba(255, 193, 7, 1)'
+            };
+        }
+
+        // ═══════════════════════════════════════════
+        // Attendance Charts
+        // ═══════════════════════════════════════════
+        function renderAttendancePieChart(regular, irregular) {
+            const ctx = document.getElementById('pieChart').getContext('2d');
+            if (pieChartInstance) pieChartInstance.destroy();
+            const c = getChartColors();
+
+            pieChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Regular (≥75%)', 'Irregular (<75%)'],
+                    datasets: [{
+                        data: [regular, irregular],
+                        backgroundColor: [c.success, c.danger],
+                        borderColor: [c.successBorder, c.dangerBorder],
+                        borderWidth: 2, hoverOffset: 12, borderRadius: 4
+                    }]
+                },
+                options: chartDoughnutOptions(c, function(ctx) {
+                    const total = ctx.dataset.data.reduce((a,b) => a+b, 0);
+                    const pct = total > 0 ? Math.round(ctx.raw / total * 100) : 0;
+                    return `${ctx.label}: ${ctx.raw} students (${pct}%)`;
+                })
+            });
+        }
+
+        function renderAttendanceBarChart(students) {
+            const ctx = document.getElementById('barChart').getContext('2d');
+            if (barChartInstance) barChartInstance.destroy();
+            const c = getChartColors();
+
+            const labels = students.map(s => {
+                const parts = s.name.split(' ');
+                return parts[0].length > 10 ? parts[0].substring(0, 10) + '..' : parts[0];
+            });
+
+            barChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Present', data: students.map(s => s.presentDays), backgroundColor: c.success, borderColor: c.successBorder, borderWidth: 1, borderRadius: 4, borderSkipped: false },
+                        { label: 'Absent', data: students.map(s => s.absentDays), backgroundColor: c.danger, borderColor: c.dangerBorder, borderWidth: 1, borderRadius: 4, borderSkipped: false }
+                    ]
+                },
+                options: chartBarOptions(c, true, function(items) {
+                    const idx = items[0].dataIndex;
+                    return students[idx].name + ' (' + students[idx].rollNo + ')';
+                })
+            });
+        }
+
+        // ═══════════════════════════════════════════
+        // Marks Charts
+        // ═══════════════════════════════════════════
+        function renderMarksPieChart(pass, fail) {
+            const ctx = document.getElementById('pieChart').getContext('2d');
+            if (pieChartInstance) pieChartInstance.destroy();
+            const c = getChartColors();
+
+            pieChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pass (≥50%)', 'Fail (<50%)'],
+                    datasets: [{
+                        data: [pass, fail],
+                        backgroundColor: [c.success, c.danger],
+                        borderColor: [c.successBorder, c.dangerBorder],
+                        borderWidth: 2, hoverOffset: 12, borderRadius: 4
+                    }]
+                },
+                options: chartDoughnutOptions(c, function(ctx) {
+                    const total = ctx.dataset.data.reduce((a,b) => a+b, 0);
+                    const pct = total > 0 ? Math.round(ctx.raw / total * 100) : 0;
+                    return `${ctx.label}: ${ctx.raw} students (${pct}%)`;
+                })
+            });
+        }
+
+        function renderMarksBarChart(students) {
+            const ctx = document.getElementById('barChart').getContext('2d');
+            if (barChartInstance) barChartInstance.destroy();
+            const c = getChartColors();
+
+            const labels = students.map(s => {
+                const n = s.name || s.rollNo;
+                const parts = n.split(' ');
+                return parts[0].length > 10 ? parts[0].substring(0, 10) + '..' : parts[0];
+            });
+
+            barChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Marks %',
+                        data: students.map(s => s.percentage || 0),
+                        backgroundColor: students.map(s => (s.percentage || 0) >= 50 ? c.success : c.danger),
+                        borderColor: students.map(s => (s.percentage || 0) >= 50 ? c.successBorder : c.dangerBorder),
+                        borderWidth: 1, borderRadius: 4, borderSkipped: false
+                    }]
+                },
+                options: chartBarOptions(c, false, function(items) {
+                    const idx = items[0].dataIndex;
+                    return (students[idx].name || students[idx].rollNo);
+                })
+            });
+        }
+
+        // ═══════════════════════════════════════════
+        // Chart Options Factories
+        // ═══════════════════════════════════════════
+        function chartDoughnutOptions(c, labelCb) {
+            return {
+                responsive: true, maintainAspectRatio: true, cutout: '55%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: c.textColor, padding: 20, font: { family: 'Inter', weight: '600', size: 13 }, usePointStyle: true, pointStyleWidth: 14 } },
+                    tooltip: { backgroundColor: c.tooltipBg, titleColor: c.textColor, bodyColor: c.textColor, borderColor: c.tooltipBorder, borderWidth: 1, cornerRadius: 12, padding: 14, titleFont: { family: 'Inter', weight: '700' }, bodyFont: { family: 'Inter' }, callbacks: { label: labelCb } }
+                },
+                animation: { animateRotate: true, animateScale: true, duration: 800, easing: 'easeOutQuart' }
+            };
+        }
+
+        function chartBarOptions(c, stacked, titleCb) {
+            return {
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                scales: {
+                    x: { stacked: stacked, ticks: { color: c.textColor, font: { family: 'Inter', size: 11 }, maxRotation: 45 }, grid: { display: false } },
+                    y: { stacked: stacked, beginAtZero: true, ticks: { color: c.textColor, font: { family: 'Inter', size: 11 }, stepSize: stacked ? 1 : undefined }, grid: { color: c.gridColor } }
+                },
+                plugins: {
+                    legend: { position: 'top', labels: { color: c.textColor, font: { family: 'Inter', weight: '600', size: 12 }, usePointStyle: true, pointStyleWidth: 12, padding: 15 } },
+                    tooltip: { backgroundColor: c.tooltipBg, titleColor: c.textColor, bodyColor: c.textColor, borderColor: c.tooltipBorder, borderWidth: 1, cornerRadius: 12, padding: 14, titleFont: { family: 'Inter', weight: '700' }, bodyFont: { family: 'Inter' }, callbacks: { title: titleCb } }
+                },
+                animation: { duration: 600, easing: 'easeOutQuart' }
+            };
+        }
+
+        // ═══════════════════════════════════════════
+        // Attendance Table
+        // ═══════════════════════════════════════════
+        function renderAttendanceTable(students) {
+            const thead = $('#reportTableHead');
+            const tbody = $('#reportTableBody');
+            thead.html(`<tr class="report-thead-row">
+                <th class="fw-bold small text-muted text-uppercase">#</th>
+                <th class="fw-bold small text-muted text-uppercase">Roll No</th>
+                <th class="fw-bold small text-muted text-uppercase">Name</th>
+                <th class="fw-bold small text-muted text-uppercase text-center">Present</th>
+                <th class="fw-bold small text-muted text-uppercase text-center">Absent</th>
+                <th class="fw-bold small text-muted text-uppercase text-center">Total</th>
+                <th class="fw-bold small text-muted text-uppercase text-center">Attendance %</th>
+                <th class="fw-bold small text-muted text-uppercase text-center">Status</th>
+            </tr>`);
+            tbody.empty();
+            $('#tableCount').text(students.length + ' students');
+
+            students.forEach((s, idx) => {
+                const pct = s.attendancePercentage;
+                const statusBadge = s.regular
+                    ? '<span class="badge status-pass fw-bold px-3 py-2">Regular</span>'
+                    : '<span class="badge status-fail fw-bold px-3 py-2">Irregular</span>';
+
+                let barColor = 'progress-high';
+                if (pct < 50) barColor = 'progress-low';
+                else if (pct < 75) barColor = 'progress-mid';
+
+                tbody.append(`<tr>
+                    <td class="small fw-medium">${idx + 1}</td>
+                    <td class="small fw-bold">${s.rollNo}</td>
+                    <td class="small fw-medium">${s.name}</td>
+                    <td class="text-center"><span class="badge status-pass fw-bold">${s.presentDays}</span></td>
+                    <td class="text-center"><span class="badge status-fail fw-bold">${s.absentDays}</span></td>
+                    <td class="text-center"><span class="badge bg-primary bg-opacity-10 text-primary fw-bold">${s.totalDays}</span></td>
+                    <td class="text-center">
+                        <div class="d-flex align-items-center justify-content-center gap-2">
+                            <div class="progress flex-grow-1" style="height: 6px; max-width: 80px; border-radius: 3px;">
+                                <div class="progress-bar ${barColor}" role="progressbar" style="width: ${pct}%; border-radius: 3px;"></div>
+                            </div>
+                            <span class="small fw-bold" style="min-width: 42px;">${pct}%</span>
+                        </div>
+                    </td>
+                    <td class="text-center">${statusBadge}</td>
+                </tr>`);
+            });
+        }
+
+        // ═══════════════════════════════════════════
+        // Marks Table (Exam/Mock)
+        // ═══════════════════════════════════════════
+        function renderMarksTable(students, typeLabel) {
+            const thead = $('#reportTableHead');
+            const tbody = $('#reportTableBody');
+            thead.html(`<tr class="report-thead-row">
+                <th class="fw-bold small text-muted text-uppercase">#</th>
+                <th class="fw-bold small text-muted text-uppercase">Roll No</th>
+                <th class="fw-bold small text-muted text-uppercase">Name</th>
+                <th class="fw-bold small text-muted text-uppercase text-center">${typeLabel}s Attended</th>
+                <th class="fw-bold small text-muted text-uppercase text-center">Total Marks</th>
+                <th class="fw-bold small text-muted text-uppercase text-center">Percentage</th>
+                <th class="fw-bold small text-muted text-uppercase text-center">Status</th>
+            </tr>`);
+            tbody.empty();
+            $('#tableCount').text(students.length + ' students');
+
+            students.forEach((s, idx) => {
+                const pct = s.percentage || 0;
+                const statusBadge = s.passed
+                    ? '<span class="badge status-pass fw-bold px-3 py-2">Pass</span>'
+                    : '<span class="badge status-fail fw-bold px-3 py-2">Fail</span>';
+
+                let barColor = 'progress-high';
+                if (pct < 35) barColor = 'progress-low';
+                else if (pct < 50) barColor = 'progress-mid';
+
+                tbody.append(`<tr>
+                    <td class="small fw-medium">${idx + 1}</td>
+                    <td class="small fw-bold">${s.rollNo}</td>
+                    <td class="small fw-medium">${s.name}</td>
+                    <td class="text-center"><span class="badge bg-primary bg-opacity-10 text-primary fw-bold">${s.attended}/${s.totalExams}</span></td>
+                    <td class="text-center"><span class="small fw-bold">${s.totalMarks}</span></td>
+                    <td class="text-center">
+                        <div class="d-flex align-items-center justify-content-center gap-2">
+                            <div class="progress flex-grow-1" style="height: 6px; max-width: 80px; border-radius: 3px;">
+                                <div class="progress-bar ${barColor}" role="progressbar" style="width: ${pct}%; border-radius: 3px;"></div>
+                            </div>
+                            <span class="small fw-bold" style="min-width: 42px;">${pct}%</span>
+                        </div>
+                    </td>
+                    <td class="text-center">${statusBadge}</td>
+                </tr>`);
+            });
+        }
+    });
+    </script>
+
+    <link th:href="@{/css/batch-report.css}" rel="stylesheet">
+
+</body>
+</html>
