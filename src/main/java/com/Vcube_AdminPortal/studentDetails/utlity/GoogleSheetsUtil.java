@@ -31,22 +31,27 @@ public class GoogleSheetsUtil {
 	 */
 	public static Sheets getSheetsService() throws IOException, GeneralSecurityException {
 
-		// Load credentials JSON from classpath
-		InputStream in = GoogleSheetsUtil.class
-				.getResourceAsStream("/credentialKeys/vcube-java-admin-portal-e6b65f754028.json");
+     // Read credentials from environment variable
+        String credentialsJson = System.getenv("GOOGLE_CREDENTIALS");
 
-		if (in == null) {
-			throw new IOException("Credentials file not found in resources: "
-					+ "/credentialKeys/vcube-java-admin-portal-e6b65f754028.json");
-		}
+        if (credentialsJson == null) {
+            throw new IOException("GOOGLE_CREDENTIALS environment variable not set.");
+        }
 
-		GoogleCredentials credentials = GoogleCredentials.fromStream(in).createScoped(SCOPES);
+        ByteArrayInputStream credentialsStream =
+                new ByteArrayInputStream(credentialsJson.getBytes());
 
-		HttpTransport httpTransport = new NetHttpTransport();
+        GoogleCredentials credentials = GoogleCredentials
+                .fromStream(credentialsStream)
+                .createScoped(SCOPES);
 
-		return new Sheets.Builder(httpTransport, JSON_FACTORY, new HttpCredentialsAdapter(credentials))
-				.setApplicationName(APPLICATION_NAME).build();
-	}
+
+        HttpTransport httpTransport = new NetHttpTransport();
+
+        return new Sheets.Builder(httpTransport, JSON_FACTORY, new HttpCredentialsAdapter(credentials))
+                .setApplicationName(APPLICATION_NAME)
+                .build();
+    }
 
 	/**
 	 * Resolves the HTML5 date input (yyyy-MM-dd) to Google Sheets expected format
