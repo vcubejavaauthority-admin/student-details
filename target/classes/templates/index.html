@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head_fragment('Dashboard - Vcube Admin')}">
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar Fragment -->
+        <th:block th:replace="~{fragments/sidebar :: sidebar_fragment}"></th:block>
+        
+        <!-- Main Content Area -->
+        <div id="content">
+            <!-- Header Fragment -->
+            <th:block th:replace="~{fragments/header :: header_fragment('Dashboard Control Panel')}"></th:block>
+            
+            <!-- Page Content -->
+            <div class="container-fluid p-4 page-enter">
+                
+                <!-- Hero Section -->
+                <div class="row justify-content-center mb-4">
+                    <div class="col-lg-12">
+                        <div class="card glass-card border-0">
+                            <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                                <div>
+                                    <h3 class="mb-2 fw-bold text-primary">Welcome to Admin Portal</h3>
+                                    <p class="text-muted mb-0">Quickly manage batches, mark attendance, and view student performance analytics.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main menu cards -->
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+                    
+                    <!-- Attendance -->
+                    <div class="col">
+                        <a th:href="@{/attendance}" class="text-decoration-none">
+                            <div class="card glass-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="p-2 bg-success bg-opacity-10 rounded-3">
+                                            <i class="lucide-user-check text-success fa-lg"></i>
+                                        </div>
+                                        <span class="badge bg-success">Action</span>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Mark Attendance</h5>
+                                    <p class="card-text text-muted small">Select batch, enter roll numbers and instantly mark attendance.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <!-- Mocks -->
+                    <div class="col">
+                        <a th:href="@{/mock}" class="text-decoration-none">
+                            <div class="card glass-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="p-2 bg-warning bg-opacity-10 rounded-3">
+                                            <i class="lucide-pen-tool text-warning fa-lg"></i>
+                                        </div>
+                                        <span class="badge bg-warning text-dark">Marks</span>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Mock Marks</h5>
+                                    <p class="card-text text-muted small">Select batch, enter roll numbers to add mock session marks.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <!-- Exams -->
+                    <div class="col">
+                        <a th:href="@{/exam}" class="text-decoration-none">
+                            <div class="card glass-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="p-2 bg-primary bg-opacity-10 rounded-3">
+                                            <i class="lucide-book-open text-primary fa-lg"></i>
+                                        </div>
+                                        <span class="badge bg-primary">Marks</span>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Exam Marks</h5>
+                                    <p class="card-text text-muted small">Select batch, enter roll numbers and add marks for exams.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- Case-Study -->
+                    <div class="col">
+                        <a th:href="@{/caseStudy}" class="text-decoration-none">
+                            <div class="card glass-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="p-2 bg-info bg-opacity-10 rounded-3">
+                                            <i class="lucide-briefcase text-info fa-lg"></i>
+                                        </div>
+                                        <span class="badge bg-info text-dark">Marks</span>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Case-Study</h5>
+                                    <p class="card-text text-muted small">Select batch, enter roll numbers and evaluate case studies.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <!-- Mock-Exams -->
+                    <div class="col">
+                        <a th:href="@{/mock-exam}" class="text-decoration-none">
+                            <div class="card glass-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="p-2 bg-secondary bg-opacity-10 rounded-3">
+                                            <i class="lucide-clipboard-list text-secondary fa-lg"></i>
+                                        </div>
+                                        <span class="badge bg-secondary">Marks</span>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Mock-Exam Marks</h5>
+                                    <p class="card-text text-muted small">Select batch, enter roll numbers to add marks for mock-exams.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- GUT-Exams -->
+                    <div class="col">
+                        <a th:href="@{/gut-exam}" class="text-decoration-none">
+                            <div class="card glass-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="p-2 bg-danger bg-opacity-10 rounded-3">
+                                            <i class="lucide-file-text text-danger fa-lg"></i>
+                                        </div>
+                                        <span class="badge bg-danger">Marks</span>
+                                    </div>
+                                    <h5 class="card-title fw-bold">GUT-Exam Marks</h5>
+                                    <p class="card-text text-muted small">Select batch, enter roll numbers to add marks for GUT-exams.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <!-- Attendance Sheet -->
+                    <div class="col">
+                        <a th:href="@{/attendance/filter-students}" class="text-decoration-none">
+                            <div class="card glass-card h-100 border-success">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="p-2 bg-success bg-opacity-25 rounded-3">
+                                            <i class="lucide-activity text-success fa-lg"></i>
+                                        </div>
+                                        <span class="badge bg-success shadow-sm">Live System</span>
+                                    </div>
+                                    <h5 class="card-title fw-bold text-success">Attendance Sheet</h5>
+                                    <p class="card-text text-muted small">View students list, quick search and auto-mark using roll filters.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                     <!-- Emails / Communication -->
+                    <div class="col">
+                        <a th:href="@{/attendance}" class="text-decoration-none">
+                            <div class="card glass-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="p-2 bg-dark bg-opacity-10 rounded-3">
+                                            <i class="lucide-mail text-secondary fa-lg"></i>
+                                        </div>
+                                        <span class="badge bg-secondary">Emails</span>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Collect Emails</h5>
+                                    <p class="card-text text-muted small">Use attendance screen to generate and copy student email lists.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                </div>
+                
+                <hr class="my-5 border-secondary opacity-25">
+                
+                <h4 class="mb-4 fw-bold text-primary"><i class="lucide-bar-chart-2 me-2"></i>Analytics & Reports</h4>
+                
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
+                    
+                    <!-- Students Mocks -->
+                    <div class="col">
+                        <form th:action="@{/students-mocks}" method="post" class="h-100">
+                            <div class="card glass-card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center">
+                                        <i class="lucide-line-chart me-2 text-info"></i> Mock Details
+                                    </h6>
+                                    <div class="mt-auto">
+                                        <select class="form-select mb-3 shadow-sm" name="batchNo" required>
+                                            <option value="" selected disabled>Select batch</option>
+                                            <option th:each="batch : ${batches}" th:value="${batch}" th:text="${batch}"></option>
+                                        </select>
+                                        <button type="submit" class="btn btn-outline-info w-100 fw-medium">View Analysis</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Students Exams -->
+                    <div class="col">
+                        <form th:action="@{/students-exams}" method="post" class="h-100">
+                            <div class="card glass-card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center">
+                                        <i class="lucide-pie-chart me-2 text-primary"></i> Exam Details
+                                    </h6>
+                                    <div class="mt-auto">
+                                        <select class="form-select mb-3 shadow-sm" name="batchNo" required>
+                                            <option value="" selected disabled>Select batch</option>
+                                            <option th:each="batch : ${batches}" th:value="${batch}" th:text="${batch}"></option>
+                                        </select>
+                                        <button type="submit" class="btn btn-outline-primary w-100 fw-medium">View Analysis</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Students Case-Studies -->
+                    <div class="col">
+                        <form th:action="@{/students-caseStudies}" method="post" class="h-100">
+                            <div class="card glass-card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center">
+                                        <i class="lucide-bar-chart me-2 text-warning"></i> Case-Study Details
+                                    </h6>
+                                    <div class="mt-auto">
+                                        <select class="form-select mb-3 shadow-sm" name="batchNo" required>
+                                            <option value="" selected disabled>Select batch</option>
+                                            <option th:each="batch : ${batches}" th:value="${batch}" th:text="${batch}"></option>
+                                        </select>
+                                        <button type="submit" class="btn btn-outline-warning w-100 fw-medium text-dark">View Analysis</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Students Gut-Exams -->
+                    <div class="col">
+                        <form th:action="@{/students-gut-exams}" method="post" class="h-100">
+                            <div class="card glass-card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center">
+                                        <i class="lucide-gantt-chart-square me-2 text-danger"></i> GUT-Exam Details
+                                    </h6>
+                                    <div class="mt-auto">
+                                        <select class="form-select mb-3 shadow-sm" name="batchNo" required>
+                                            <option value="" selected disabled>Select batch</option>
+                                            <option th:each="batch : ${batches}" th:value="${batch}" th:text="${batch}"></option>
+                                        </select>
+                                        <button type="submit" class="btn btn-outline-danger w-100 fw-medium">View Analysis</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                     <!-- Students Mock-Exams -->
+                    <div class="col">
+                        <form th:action="@{/students-mock-exams}" method="post" class="h-100">
+                            <div class="card glass-card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center">
+                                        <i class="lucide-area-chart me-2 text-secondary"></i> Mock-Exam Details
+                                    </h6>
+                                    <div class="mt-auto">
+                                        <select class="form-select mb-3 shadow-sm" name="batchNo" required>
+                                            <option value="" selected disabled>Select batch</option>
+                                            <option th:each="batch : ${batches}" th:value="${batch}" th:text="${batch}"></option>
+                                        </select>
+                                        <button type="submit" class="btn btn-outline-secondary w-100 fw-medium">View Analysis</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                     <!-- Students Projects -->
+                     <div class="col">
+                        <form th:action="@{/students-projects}" method="post" class="h-100">
+                            <div class="card glass-card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center">
+                                        <i class="lucide-network me-2 text-success"></i> Projects Details
+                                    </h6>
+                                    <div class="mt-auto">
+                                        <select class="form-select mb-3 shadow-sm" name="batchNo" required>
+                                            <option value="" selected disabled>Select batch</option>
+                                            <option th:each="batch : ${batches}" th:value="${batch}" th:text="${batch}"></option>
+                                        </select>
+                                        <button type="submit" class="btn btn-outline-success w-100 fw-medium">View Projects</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- 📊 BATCH ATTENDANCE REPORT -->
+                    <div class="col">
+                        <a th:href="@{/batch-report}" class="text-decoration-none h-100 d-block">
+                            <div class="card glass-card h-100 border-success" style="background: rgba(25,135,84,0.05);">
+                                <div class="card-body d-flex flex-column">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="fw-bold mb-0 d-flex align-items-center">
+                                            <i class="lucide-bar-chart-2 me-2 text-success"></i> Batch Attendance Report
+                                        </h6>
+                                        <span class="badge bg-success">Analytics</span>
+                                    </div>
+                                    <p class="text-muted small flex-grow-1">Monthly attendance analytics with charts — regular vs irregular students across batches.</p>
+                                    <button type="button" class="btn btn-outline-success w-100 fw-medium">View Reports</button>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- 🔥 STUDENT DETAILS - Dynamic RollNo 🔥 -->
+                    <div class="col-lg-6 col-xl-4">
+                        <form th:action="@{/student-details}" method="post" class="h-100">
+                            <div class="card glass-card h-100 border-primary shadow-sm" style="background: rgba(13,110,253,0.05);">
+                                <div class="card-body d-flex flex-column">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="card-title fw-bold text-primary mb-0">
+                                            <i class="lucide-user text-primary me-2"></i> Individual Student
+                                        </h5>
+                                        <span class="badge bg-primary">Deep Dive</span>
+                                    </div>
+                                    <p class="text-muted small mb-3 flex-grow-1">Select batch to auto-load roll numbers.</p>
+
+                                    <div class="mb-3">
+                                        <label for="batchNo" class="form-label small fw-bold text-muted">Select Batch</label>
+                                        <select class="form-select shadow-sm" id="batchNo" name="batchNo" required>
+                                            <option value="" disabled selected>Select batch...</option>
+                                            <option th:each="batch : ${batches}" th:value="${batch}" th:text="${batch}"></option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label for="rollNo" class="form-label small fw-bold text-muted d-flex justify-content-between">
+                                            Select Roll Number
+                                            <div id="rollNoLoading" class="spinner-border spinner-border-sm text-primary d-none" role="status"></div>
+                                        </label>
+                                        <select class="form-select shadow-sm" id="rollNo" name="rollNo" required disabled>
+                                            <option value="" disabled selected>Wait for batch...</option>
+                                        </select>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm" id="viewBtn" disabled>
+                                        <i class="lucide-eye me-2" style="width: 18px;"></i>View Comprehensive Report
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts Fragment -->
+    <th:block th:replace="~{fragments/scripts :: scripts_fragment}"></th:block>
+    
+    <!-- jQuery Data Fetching Logic (Maintained) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const batchSelect = $('#batchNo');
+            const rollSelect = $('#rollNo');
+            const viewBtn = $('#viewBtn');
+            const loadingDiv = $('#rollNoLoading');
+
+            // Batch change → Load roll numbers
+            batchSelect.change(function() {
+                const batchNo = $(this).val();
+                
+                if (batchNo) {
+                    rollSelect.prop('disabled', true).html('<option value="" disabled>Loading...</option>');
+                    loadingDiv.removeClass('d-none');
+                    viewBtn.prop('disabled', true);
+                    
+                    $.ajax({
+                        url: '/get-rollnos',
+                        type: 'GET',
+                        data: { batchNo: batchNo },
+                        success: function(data) {
+                            rollSelect.html('<option value="" disabled selected>Select roll number</option>');
+                            if (data && Object.keys(data).length > 0) {
+                                $.each(data, function(rollNo, name) {
+                                    rollSelect.append(`<option value="${rollNo}">${rollNo} - ${name}</option>`);
+                                });
+                            } else {
+                                rollSelect.html('<option value="">No students in this batch</option>');
+                            }
+                            rollSelect.prop('disabled', false);
+                        },
+                        error: function() {
+                            rollSelect.html('<option value="">Error loading roll numbers</option>');
+                            rollSelect.prop('disabled', false);
+                        },
+                        complete: function() {
+                            loadingDiv.addClass('d-none');
+                        }
+                    });
+                } else {
+                    rollSelect.html('<option value="" disabled>Wait for batch...</option>').prop('disabled', true);
+                    viewBtn.prop('disabled', true);
+                }
+            });
+
+            // RollNo change → Enable submit
+            rollSelect.change(function() {
+                viewBtn.prop('disabled', $(this).val() === '');
+            });
+        });
+    </script>
+</body>
+</html>
