@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Vcube Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link th:href="@{/css/login.css}" rel="stylesheet">
+</head>
+<body>
+    <!-- Floating Particles -->
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+
+    <div class="login-container">
+        <!-- Theme Toggle -->
+        <div style="position: absolute; top: 1rem; right: 1rem; z-index: 100;">
+            <button class="theme-switch" id="themeSwitch" title="Toggle Dark/Light Mode" 
+                    style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease;">
+                <i class="lucide-moon" id="themeIcon"></i>
+            </button>
+        </div>
+
+        <!-- Animated Monkey -->
+        <div class="animcon" id="animcon">
+            <img id="hands" src="https://raw.githubusercontent.com/naaficodes/Monkey-Login/master/images/hands.png" alt="Monkey Hands"/>
+        </div>
+        
+        <div class="login-card" style="position: relative; z-index: 2;">
+            <div class="logo-area" style="margin-bottom: 1.5rem;">
+                <img th:src="@{/vcubeLogo.png}" alt="Vcube Logo" style="margin-bottom: 0;">
+                <h2 style="margin-top: 10px;">Vcube Portal</h2>
+            </div>
+
+            <div th:if="${error}" class="error-alert">
+                <i class="lucide-alert-circle" style="width: 18px; height: 18px;"></i>
+                <span th:text="${error}">Invalid credentials</span>
+            </div>
+
+            <div th:if="${param.logout}" class="success-alert">
+                <i class="lucide-check-circle" style="width: 18px; height: 18px;"></i>
+                <span>You have been logged out.</span>
+            </div>
+
+            <form th:action="@{/auth/login}" method="post">
+                <div class="form-floating">
+                    <input type="text" id="username" class="form-control" name="username" placeholder=" " required />
+                    <label for="username">Username</label>
+                </div>
+
+                <div class="form-floating position-relative">
+                    <input type="password" id="password" class="form-control" name="password" placeholder=" " required />
+                    <label for="password">Password</label>
+                    <button type="button" id="togglePassword" class="password-toggle" tabindex="-1">
+                        <i id="toggleIcon" class="lucide-eye-off"></i>
+                    </button>
+                </div>
+
+                <button type="submit" class="btn-login" style="margin-top:20px;">Sign In</button>
+            </form>
+
+            <div class="footer-text">
+                &copy; 2026 Vcube Software Solutions
+            </div>
+        </div>
+    </div>
+
+    <!-- Vcube Scripts -->
+    <script th:src="@{/js/theme.js}"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Particle System
+        document.addEventListener('mousemove', (e) => {
+            const particles = document.querySelectorAll('.particle');
+            particles.forEach(particle => {
+                const speed = particle.style.animationDuration ? parseFloat(particle.style.animationDuration) : 10;
+                const x = (window.innerWidth - e.pageX * speed) / 100;
+                const y = (window.innerHeight - e.pageY * speed) / 100;
+                particle.style.transform = `translateX(${x}px) translateY(${y}px)`;
+            });
+        });
+
+        // Monkey Animation Logic
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const animcon = document.getElementById('animcon');
+        const hands = document.getElementById('hands');
+        const toggleBtn = document.getElementById('togglePassword');
+        const toggleIcon = document.getElementById('toggleIcon');
+
+        function closeye() {
+            animcon.style.backgroundImage = "url('https://raw.githubusercontent.com/naaficodes/Monkey-Login/master/images/monkey_pwd.gif')";
+            hands.style.marginTop = "0%";
+        }
+
+        function openeye() {
+            animcon.style.backgroundImage = "url('https://raw.githubusercontent.com/naaficodes/Monkey-Login/master/images/monkey.gif')";
+            hands.style.marginTop = "110%";
+        }
+
+        // Look at typing in username
+        usernameInput.addEventListener('focus', openeye);
+        usernameInput.addEventListener('click', openeye);
+
+        // Cover eyes on password
+        passwordInput.addEventListener('focus', () => {
+            if (passwordInput.type === 'password') {
+                closeye();
+            }
+        });
+
+        // Password visibility toggle
+        toggleBtn.addEventListener('click', () => {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('lucide-eye-off');
+                toggleIcon.classList.add('lucide-eye');
+                lucide.createIcons();
+                openeye();
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('lucide-eye');
+                toggleIcon.classList.add('lucide-eye-off');
+                lucide.createIcons();
+                if (document.activeElement === passwordInput) {
+                    closeye();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
