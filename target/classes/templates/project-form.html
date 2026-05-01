@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head_fragment('Project Status - Vcube Admin')}"></th:block>
+    <style>
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        }
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary-bg);
+            margin-top: 2rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, #e2e8f0, transparent);
+        }
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+        }
+        .checkbox-item {
+            background: #fff;
+            padding: 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 2px solid #f1f5f9;
+        }
+        .checkbox-item:hover {
+            border-color: var(--primary-bg);
+            background: #f8fafc;
+        }
+        .checkbox-item.active {
+            background: rgba(79, 70, 229, 0.05);
+            border-color: var(--primary-bg);
+        }
+        .checkbox-item input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--primary-bg);
+        }
+        .loading-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); 
+            z-index: 9999; display: none; align-items: center; justify-content: center; 
+        }
+        .loading-overlay.show { display: flex !important; }
+    </style>
+</head>
+<body class="bg-body">
+
+    <div id="loader" class="loading-overlay">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <div class="wrapper">
+        <!-- Sidebar Fragment -->
+        <th:block th:replace="~{fragments/sidebar :: sidebar_fragment}"></th:block>
+        
+        <!-- Main Content Area -->
+        <div id="content">
+            <!-- Header Fragment -->
+            <th:block th:replace="~{fragments/header :: header_fragment('Project Status Submission')}"></th:block>
+
+            <div class="container-fluid p-4">
+                
+                <div th:if="${success}" class="alert alert-success border-0 shadow-sm rounded-4 d-flex align-items-center mb-4 p-3">
+                    <div class="bg-success bg-opacity-10 p-2 rounded-circle me-3">
+                        <i class="lucide-check-circle text-success"></i>
+                    </div>
+                    <span class="fw-medium" th:text="${success}"></span>
+                </div>
+
+                <div th:if="${error}" class="alert alert-danger border-0 shadow-sm rounded-4 d-flex align-items-center mb-4 p-3">
+                    <div class="bg-danger bg-opacity-10 p-2 rounded-circle me-3">
+                        <i class="lucide-alert-circle text-danger"></i>
+                    </div>
+                    <span class="fw-medium" th:text="${error}"></span>
+                </div>
+
+                <div class="row justify-content-center">
+                    <div class="col-xl-10">
+                        <div class="card glass-card border-0">
+                            <div class="card-header bg-transparent border-0 p-4 pb-0">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="p-3 bg-primary bg-opacity-10 rounded-4">
+                                        <i class="lucide-folder-kanban text-primary fs-3"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="mb-1 fw-bold">Student Project Tracking</h4>
+                                        <p class="text-muted small mb-0">Record and monitor individual project milestones.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card-body p-4 p-md-5">
+                                <form th:action="@{/projects/submit}" th:object="${submission}" method="post" id="projectForm">
+                                    
+                                    <!-- Selection Row -->
+                                    <div class="row g-4 mb-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold small text-uppercase text-muted">Target Batch</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-light border-end-0"><i class="lucide-users text-primary"></i></span>
+                                                <select th:field="*{batch}" class="form-select border-start-0" id="batchSelect" required>
+                                                    <option value="">Select Batch...</option>
+                                                    <option th:each="b : ${batches}" th:value="${b}" th:text="${b}"></option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold small text-uppercase text-muted">Select Student</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-light border-end-0"><i class="lucide-user text-primary"></i></span>
+                                                <select th:field="*{rollNo}" class="form-select border-start-0" id="rollNoSelect" required disabled>
+                                                    <option value="">First Select Batch</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Project Details Section -->
+                                    <div id="projectSections" style="display: none;">
+                                        
+                                        <div class="section-title">
+                                            <i class="lucide-code text-primary"></i> Core Java Console Projects
+                                        </div>
+                                        <div class="project-grid" id="coreJavaGrid">
+                                            <!-- Dynamic checkboxes -->
+                                        </div>
+
+                                        <div class="section-title">
+                                            <i class="lucide-globe text-primary"></i> Web Applications
+                                        </div>
+                                        <div class="row g-4" id="webAppsList">
+                                            <!-- Dynamic textboxes -->
+                                        </div>
+
+                                        <div class="mt-5 pt-3">
+                                            <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5 fw-bold shadow-sm">
+                                                <i class="lucide-save me-2"></i> Save Status
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Scripts Fragment -->
+    <th:block th:replace="~{fragments/scripts :: scripts_fragment}"></th:block>
+
+    <!-- Include jQuery for AJAX and DOM manipulation -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            const batchSelect = $('#batchSelect');
+            const rollNoSelect = $('#rollNoSelect');
+            const projectSections = $('#projectSections');
+            const loader = $('#loader');
+
+            batchSelect.on('change', function() {
+                const batch = $(this).val();
+                if (batch) {
+                    loader.addClass('show');
+                    
+                    // 1. Fetch Students
+                    $.get('/api/mock-drive/students?batch=' + batch)
+                    .done(function(students) {
+                        console.log("Students fetched:", students);
+                        rollNoSelect.empty().append('<option value="">Select Student...</option>');
+                        if (students && students.length > 0) {
+                            students.forEach(s => {
+                                // Handle both name and Name property
+                                const studentName = s.name || s.Name || 'Unknown';
+                                rollNoSelect.append(`<option value="${s.rollNo}">${s.rollNo} - ${studentName}</option>`);
+                            });
+                            rollNoSelect.prop('disabled', false);
+                        } else {
+                            rollNoSelect.append('<option value="">No students found in Attendance tab</option>');
+                        }
+                    })
+                    .fail(function(err) {
+                        console.error("Failed to fetch students", err);
+                        alert("Error fetching students. Please check if 'Attendance' tab exists in the sheet.");
+                    })
+                    .always(() => loader.removeClass('show'));
+
+                    // 2. Fetch Headers
+                    $.get('/api/projects/headers?batch=' + batch)
+                    .done(function(headers) {
+                        console.log("Headers fetched:", headers);
+                        const coreJavaGrid = $('#coreJavaGrid');
+                        coreJavaGrid.empty();
+                        if (headers.coreJava && headers.coreJava.length > 0) {
+                            headers.coreJava.forEach(h => {
+                                coreJavaGrid.append(`
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" name="coreJavaProjects" value="${h}">
+                                        <span class="fw-medium">${h}</span>
+                                    </label>
+                                `);
+                            });
+                        } else {
+                            coreJavaGrid.append('<p class="text-muted small">No Core Java headers found in Projects tab Row 2</p>');
+                        }
+
+                        const webAppsList = $('#webAppsList');
+                        webAppsList.empty();
+                        if (headers.webApps && headers.webApps.length > 0) {
+                            headers.webApps.forEach(h => {
+                                webAppsList.append(`
+                                    <div class="col-md-6 col-xl-4">
+                                        <label class="form-label fw-bold text-muted small">${h}</label>
+                                        <input type="text" name="webApplications['${h}']" class="form-control form-control-lg bg-light border-0" placeholder="Project Name/Title">
+                                    </div>
+                                `);
+                            });
+                        } else {
+                            webAppsList.append('<p class="text-muted small ms-3">No Web App headers found in Projects tab Row 2</p>');
+                        }
+                        
+                        if(typeof lucide !== 'undefined') lucide.createIcons();
+                    })
+                    .fail(function(err) {
+                        console.error("Failed to fetch headers", err);
+                    });
+                } else {
+                    rollNoSelect.empty().append('<option value="">First Select Batch</option>').prop('disabled', true);
+                    projectSections.hide();
+                }
+            });
+
+            rollNoSelect.on('change', function() {
+                const rollNo = $(this).val();
+                const batch = batchSelect.val();
+                if (rollNo) {
+                    loader.addClass('show');
+                    // Reset fields first
+                    $('input[type="checkbox"]').prop('checked', false).parent().removeClass('active');
+                    $('input[type="text"]').val('');
+                    
+                    $.get(`/api/projects/data?batch=${batch}&rollNo=${rollNo}`)
+                    .done(function(data) {
+                        console.log("Student project data:", data);
+                        if (data && data.projectNames) {
+                            data.projectNames.forEach((name, index) => {
+                                const status = data.projectStatus[index];
+                                if (status && status !== 'Not-Done') {
+                                    const checkbox = $(`input[type="checkbox"][value="${name}"]`);
+                                    if (checkbox.length) {
+                                        if (status === 'Done') {
+                                            checkbox.prop('checked', true).parent().addClass('active');
+                                        }
+                                    } else {
+                                        // Try both escaped and unescaped for the selector
+                                        const textbox = $(`input[name="webApplications['${name}']"]`);
+                                        if (textbox.length) {
+                                            textbox.val(status);
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                        // Always show sections once a student is selected, even if data is empty
+                        projectSections.fadeIn();
+                    })
+                    .fail(function(err) {
+                        console.error("Failed to fetch student data", err);
+                        // Show sections anyway so they can be filled
+                        projectSections.fadeIn();
+                    })
+                    .always(() => loader.removeClass('show'));
+                } else {
+                    projectSections.hide();
+                }
+            });
+
+            $(document).on('change', '.checkbox-item input', function() {
+                $(this).parent().toggleClass('active', this.checked);
+            });
+
+            $('#projectForm').on('submit', function() {
+                loader.addClass('show');
+            });
+        });
+    </script>
+</body>
+</html>

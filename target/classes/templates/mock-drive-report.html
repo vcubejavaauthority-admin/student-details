@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<th:block th:replace="~{fragments/head :: head_fragment('Mock Drive Report – Vcube Admin')}"></th:block>
+<style>
+.status-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-weight: 600;
+}
+.status-sent {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+    border: 1px solid rgba(40, 167, 69, 0.2);
+}
+.status-pending {
+    background: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+    border: 1px solid rgba(255, 193, 7, 0.2);
+}
+.glass-table {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    overflow: hidden;
+}
+.glass-table thead {
+    background: rgba(255, 193, 7, 0.1);
+}
+.glass-table th {
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    border: none;
+}
+.glass-table td {
+    border-color: rgba(255, 255, 255, 0.05);
+    vertical-align: middle;
+}
+.btn-send {
+    transition: all 0.3s ease;
+}
+.btn-send:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+/* Loader styles */
+.loading-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: var(--glass-bg);
+	backdrop-filter: blur(5px);
+	z-index: 9999;
+	display: none;
+	align-items: center;
+	justify-content: center;
+}
+.loading-overlay.show {
+	display: flex !important;
+}
+</style>
+</head>
+<body class="bg-body">
+    <div id="loader" class="loading-overlay">
+		<div class="spinner-border text-warning" style="width: 3rem; height: 3rem;" role="status">
+			<span class="visually-hidden">Loading...</span>
+		</div>
+	</div>
+
+    <div class="wrapper">
+        <th:block th:replace="~{fragments/sidebar :: sidebar_fragment}"></th:block>
+        <div id="content">
+            <th:block th:replace="~{fragments/header :: header_fragment('Mock Drive Report')}"></th:block>
+
+            <div class="container-fluid p-4 page-enter">
+                <div class="row pt-2 pl-2 mb-4">
+                    <div class="col-12 d-flex justify-content-between align-items-center">
+                        <a th:href="@{/dashboard}" class="btn btn-outline-secondary rounded-pill fw-medium btn-sm">
+                            <i class="lucide-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                        <div class="d-flex gap-2">
+                             <select id="sheetSelect" class="form-select glass-input rounded-pill" style="width: auto; min-width: 200px;">
+                                <option value="">Select Sheet...</option>
+                                <option th:each="name : ${sheetNames}" th:value="${name}" th:text="${name}"></option>
+                            </select>
+                            <button onclick="loadData()" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm">
+                                <i class="lucide-refresh-cw me-2"></i>Load Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card glass-card border-0 shadow-sm mb-5">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table glass-table mb-0" id="reportTable">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-4">S/No</th>
+                                        <th>Student Name</th>
+                                        <th>Batch / Roll</th>
+                                        <th>Email</th>
+                                        <th>JAM</th>
+                                        <th>Tech Score</th>
+                                        <th>HR Score</th>
+                                        <th>Overall</th>
+                                        <th>Notify Status</th>
+                                        <th class="pe-4 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableBody">
+                                    <tr>
+                                        <td colspan="10" class="text-center py-5 text-muted">
+                                            <i class="lucide-database fa-3x mb-3 d-block opacity-25"></i>
+                                            Select a sheet to view mock drive results
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <th:block th:replace="~{fragments/scripts :: scripts_fragment}"></th:block>
+
+    <script>
+        function showLoading() { document.getElementById('loader').classList.add('show'); }
+        function hideLoading() { document.getElementById('loader').classList.remove('show'); }
+
+        function loadData() {
+            const sheetName = document.getElementById('sheetSelect').value;
+            if (!sheetName) {
+                alert("Please select a sheet first");
+                return;
+            }
+
+            showLoading();
+            fetch(`/api/mock-drive/data?sheetName=${encodeURIComponent(sheetName)}`)
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('tableBody');
+                    tbody.innerHTML = '';
+                    
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="10" class="text-center py-5">No data found in this sheet</td></tr>';
+                    } else {
+                        data.forEach(row => {
+                            const isSent = row.notifyEmail && row.notifyEmail.toLowerCase() === 'sent';
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td class="ps-4">${row.sNo}</td>
+                                <td class="fw-bold">${row.studentName}</td>
+                                <td><span class="badge bg-secondary bg-opacity-10 text-body">${row.batchNoRollNo}</span></td>
+                                <td class="small text-muted">${row.emailId}</td>
+                                <td><span class="text-warning">${'⭐'.repeat(Math.min(10, parseInt(row.jamRatingRound2) || 0))}</span></td>
+                                <td><span class="badge bg-primary bg-opacity-10 text-primary">${row.technicalInterviewScoreRound3 || 0}/10</span></td>
+                                <td><span class="badge bg-info bg-opacity-10 text-info">${row.hrInterviewScoreRound4 || 0}/10</span></td>
+                                <td><span class="text-warning">${'⭐'.repeat(Math.min(10, parseInt(row.overall) || 0))}</span></td>
+                                <td>
+                                    <span class="status-badge ${isSent ? 'status-sent' : 'status-pending'}">
+                                        <i class="lucide-${isSent ? 'check' : 'clock'} me-1"></i> ${isSent ? 'Sent' : 'Pending'}
+                                    </span>
+                                </td>
+                                <td class="pe-4 text-center">
+                                    <button class="btn btn-sm btn-warning rounded-pill btn-send" 
+                                            onclick='sendEmail(this, ${JSON.stringify(row)})'
+                                            ${isSent ? 'disabled' : ''}>
+                                        <i class="lucide-send me-1"></i> Send
+                                    </button>
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    }
+                    if(typeof lucide !== 'undefined') lucide.createIcons();
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Error loading data");
+                })
+                .finally(hideLoading);
+        }
+
+        function sendEmail(btn, rowData) {
+            const sheetName = document.getElementById('sheetSelect').value;
+            if (!confirm(`Are you sure you want to send feedback to ${rowData.studentName}?`)) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Sending...';
+
+            const formData = new URLSearchParams();
+            for (let key in rowData) {
+                if (rowData[key]) formData.append(key, rowData[key]);
+            }
+            formData.append('sheetName', sheetName);
+
+            fetch('/api/mock-drive/send-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString()
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    btn.innerHTML = '<i class="lucide-check me-1"></i> Sent';
+                    btn.classList.remove('btn-warning');
+                    btn.classList.add('btn-success');
+                    // Update status badge
+                    const statusBadge = btn.closest('tr').querySelector('.status-badge');
+                    statusBadge.className = 'status-badge status-sent';
+                    statusBadge.innerHTML = '<i class="lucide-check me-1"></i> Sent';
+                    if(typeof lucide !== 'undefined') lucide.createIcons();
+                } else {
+                    alert(res.message || "Failed to send email");
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="lucide-send me-1"></i> Send';
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Error sending request");
+                btn.disabled = false;
+                btn.innerHTML = '<i class="lucide-send me-1"></i> Send';
+            });
+        }
+    </script>
+</body>
+</html>
