@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <!-- Sidebar Fragment -->
+    <nav th:fragment="sidebar_fragment" id="sidebar" class="shadow-sm">
+        <div class="sidebar-header p-4 border-bottom d-flex align-items-center justify-content-between">
+            <a th:href="@{/dashboard}" class="text-decoration-none d-flex align-items-center">
+                <!-- <i class="fas fa-cube text-primary fa-2x me-2"></i> -->
+                <img alt="vcube-logo" th:src="@{/vcubeLogo.png}" style="max-height: 40px; margin-right: 10px;">
+                <h4 class="mb-0 fw-bold" style="color: var(--text-main);">Vcube Admin</h4>
+            </a>
+            <!-- Mobile Toggle -->
+            <button class="btn d-lg-none" id="mobileSidebarToggle" style="color: var(--text-main);">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="sidebar-content flex-grow-1 py-3 overflow-y-auto">
+            <ul class="nav flex-column mb-0">
+                <li class="nav-item px-3 mb-2">
+                    <small class="text-uppercase text-muted fw-bold" style="font-size: 0.75rem; letter-spacing: 1px;">Main Menu</small>
+                </li>
+                
+                <li class="nav-item">
+                    <a th:href="@{/dashboard}" class="nav-link px-4 py-3 d-flex align-items-center" style="color: var(--text-main); transition: all 0.2s;">
+                        <i class="lucide-layout-dashboard me-3 text-primary"></i> <span class="fw-medium">Dashboard</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item px-3 mt-4 mb-2">
+                    <small class="text-uppercase text-muted fw-bold" style="font-size: 0.75rem; letter-spacing: 1px;">Attendance</small>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/attendance}" class="nav-link px-4 py-2 d-flex align-items-center" style="color: var(--text-main); transition: all 0.2s;">
+                        <i class="lucide-user-check me-3 text-success"></i> <span class="fw-medium">Mark Attendance</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/attendance/filter-students}" class="nav-link px-4 py-2 d-flex align-items-center" style="color: var(--text-main); transition: all 0.2s;">
+                        <i class="lucide-users me-3 text-success"></i> <span class="fw-medium">Live Sheet</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/batch-report}" class="nav-link px-4 py-2 d-flex align-items-center" style="color: var(--text-main); transition: all 0.2s;">
+                        <i class="lucide-bar-chart-2 me-3 text-success"></i> <span class="fw-medium">Batch Reports</span>
+                    </a>
+                </li>
+
+                <li class="nav-item px-3 mt-4 mb-2">
+                    <small class="text-uppercase text-muted fw-bold" style="font-size: 0.75rem; letter-spacing: 1px;">Marking System</small>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/mock}" class="nav-link px-4 py-2 d-flex align-items-center" style="color: var(--text-main); transition: all 0.2s;">
+                        <i class="lucide-pen-tool me-3 text-warning"></i> <span class="fw-medium">Mocks</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/exam}" class="nav-link px-4 py-2 d-flex align-items-center" style="color: var(--text-main); transition: all 0.2s;">
+                        <i class="lucide-book-open me-3 text-warning"></i> <span class="fw-medium">Exams</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/caseStudy}" class="nav-link px-4 py-2 d-flex align-items-center" style="color: var(--text-main); transition: all 0.2s;">
+                        <i class="lucide-briefcase me-3 text-warning"></i> <span class="fw-medium">Case Studies</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/mock-exam}" class="nav-link px-4 py-2 d-flex align-items-center" style="color: var(--text-main); transition: all 0.2s;">
+                        <i class="lucide-clipboard-list me-3 text-warning"></i> <span class="fw-medium">Mock Exams</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/gut-exam}" class="nav-link px-4 py-2 d-flex align-items-center" style="color: var(--text-main); transition: all 0.2s;">
+                        <i class="lucide-file-text me-3 text-warning"></i> <span class="fw-medium">GUT Exams</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/mock-drive}" class="nav-link px-4 py-2 d-flex align-items-center" style="color: var(--text-main); transition: all 0.2s;">
+                        <i class="lucide-medal me-3 text-warning"></i> <span class="fw-medium">Mock Drive Feedback</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/mock-drive-report}" class="nav-link px-4 py-2 d-flex align-items-center" style="color: var(--text-main); transition: all 0.2s;">
+                        <i class="lucide-table me-3 text-warning"></i> <span class="fw-medium">Mock Drive Reports</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/projects/form}" class="nav-link px-4 py-2 d-flex align-items-center" style="color: var(--text-main); transition: all 0.2s;">
+                        <i class="lucide-folder-kanban me-3 text-warning"></i> <span class="fw-medium">Projects Status</span>
+                    </a>
+                </li>
+
+                <li class="nav-item px-3 mt-4 mb-2">
+                    <small class="text-uppercase text-muted fw-bold" style="font-size: 0.75rem; letter-spacing: 1px;">Resources</small>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/daily-tasks}" class="nav-link px-4 py-2 d-flex align-items-center" style="color: var(--text-main); transition: all 0.2s;">
+                        <i class="lucide-book-open-check me-3 text-info"></i> <span class="fw-medium">Daily Tasks</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <style>
+                #sidebar .nav-link:hover {
+                    background: var(--bg-body);
+                    border-right: 4px solid var(--primary-bg);
+                    color: var(--primary-bg) !important;
+                }
+                #sidebar .nav-link i {
+                    width: 20px;
+                    text-align: center;
+                }
+            </style>
+        </div>
+        <div class="sidebar-footer p-3 border-top text-center">
+            <small class="text-muted">© Vcube Admin</small>
+        </div>
+    </nav>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head_fragment('404 Not Found - Vcube')}"></head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Simplified Header for Error Page -->
+    <div class="top-header d-flex align-items-center justify-content-between px-4 py-3 border-bottom shadow-sm" style="background-color: var(--bg-card);">
+        <div class="d-flex align-items-center">
+            <img th:src="@{/images/vcube-round-logo.png}" alt="Vcube Logo" style="width: 40px; height: 40px; margin-right: 15px;">
+            <h4 class="mb-0 fw-bold" style="color: #f97316;">Vcube <span style="color: var(--text-main);">Admin</span></h4>
+        </div>
+        <div>
+            <!-- Global Dark/Light Switch -->
+            <button class="theme-switch" id="themeSwitch" title="Toggle Dark/Light Mode">
+                <i class="lucide-moon" id="themeIcon"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 404 Content Area -->
+    <main class="flex-grow-1 d-flex align-items-center justify-content-center p-4">
+        <div class="glass-card p-5 text-center" style="max-width: 550px; width: 100%;">
+            <div class="mb-4">
+                <div class="position-relative d-inline-block">
+                    <h1 class="display-1 fw-bold mb-0" style="color: #f97316; font-size: 8rem; line-height: 1; text-shadow: 0 10px 20px rgba(249, 115, 22, 0.2);">404</h1>
+                    <div class="position-absolute" style="top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: -1;">
+                        <div style="width: 150px; height: 150px; border-radius: 50%; background: rgba(249, 115, 22, 0.1); filter: blur(20px);"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <h2 class="fw-bold mb-3" style="font-size: 2rem;">Page Not Found</h2>
+            <p class="text-muted mb-4 fs-5">Oops! The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.</p>
+            
+            <div class="d-flex justify-content-center gap-3">
+                <button onclick="window.history.back()" class="btn btn-outline-secondary px-4 py-2 d-flex align-items-center fw-medium">
+                    <i class="lucide-arrow-left me-2" style="width: 18px; height: 18px;"></i> Go Back
+                </button>
+                <a th:href="@{/}" class="btn btn-primary px-4 py-2 d-flex align-items-center fw-medium" style="background-color: #f97316; border-color: #f97316;">
+                    <i class="lucide-home me-2" style="width: 18px; height: 18px;"></i> Dashboard
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Include Global Scripts -->
+    <div th:replace="~{fragments/scripts :: scripts_fragment}"></div>
+</body>
+</html>

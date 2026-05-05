@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Photos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link
+	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+	rel="stylesheet">
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+		<div class="container">
+			<a class="navbar-brand fw-bold" th:href="@{/dashboard}"> <i
+				class="fas fa-arrow-left me-2"></i>Back to Dashboard
+			</a>
+		</div>
+	</nav>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4>📸 Upload Student Photos</h4>
+                </div>
+                <div class="card-body">
+                    
+                    <!-- Messages -->
+                    <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+                        <span th:text="${success}"></span>
+                        <button class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+                        <span th:text="${error}"></span>
+                        <button class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+
+                    <!-- Upload Form -->
+                    <form th:action="@{/students/upload-photo}" 
+                          method="post" enctype="multipart/form-data">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Batch</label>
+                                <select class="form-select" name="batch" required>
+                                    <option value="">Select...</option>
+                                    <option th:each="b:${batches}" th:value="${b}" th:text="${b}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Roll No</label>
+                                <input type="text" class="form-control" 
+                                       name="rollNo" placeholder="JFS-B59-001" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Photo</label>
+                                <input type="file" class="form-control" 
+                                       name="photo" accept="image/*" required>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    📤 Upload
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <hr>
+                    <div class="text-center text-muted">
+                        <small>Photos will appear in Students sheet (P column)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
