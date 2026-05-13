@@ -1,0 +1,22 @@
+@charset "UTF-8";
+
+/* loading overlay */
+.loading-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(255, 255, 255, 0.7);
+	display: none; /* js tho show/hide */
+	align-items: center;
+	justify-content: center;
+	z-index: 1050;
+}
+
+.loading-overlay.active {
+	display: flex;
+}
+
+.spinner-border {
+	width: 3rem;
+	height: 3rem;
+}
+

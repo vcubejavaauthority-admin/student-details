@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head_fragment('Batch Shifting - Vcube Admin')}">
+</head>
+<body data-theme="light">
+    <div class="wrapper">
+        <!-- Sidebar Fragment -->
+        <th:block th:replace="~{fragments/sidebar :: sidebar_fragment}"></th:block>
+        
+        <!-- Main Content Area -->
+        <div id="content">
+            <!-- Header Fragment -->
+            <th:block th:replace="~{fragments/header :: header_fragment('Batch Shifting')}"></th:block>
+            
+            <!-- Page Content -->
+            <div class="container-fluid p-4 page-enter">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <div class="card glass-card border-0 shadow-sm overflow-hidden animate-in">
+                            <div class="card-header bg-primary bg-opacity-10 border-0 p-4">
+                                <h5 class="mb-0 fw-bold text-primary d-flex align-items-center">
+                                    <i data-lucide="git-branch-plus" class="me-2" style="width:24px; height:24px;"></i> 
+                                    Shift Student to New Batch
+                                </h5>
+                                <p class="text-muted small mb-0 mt-1">Move a student from their current batch to a new one. Their details will be appended to the new batch's sheets.</p>
+                            </div>
+                            
+                            <div class="card-body p-4">
+                                <form id="batchShiftForm">
+                                    
+                                    <!-- Section 1: Present Batch -->
+                                    <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2">1. Present Batch Details</h6>
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-medium small">Select Present Batch <span class="text-danger">*</span></label>
+                                            <select class="form-select shadow-sm" id="presentBatch" name="presentBatch" required>
+                                                <option value="" disabled selected>-- Select Batch --</option>
+                                                <option th:each="b : ${batches}" th:value="${b}" th:text="${b}"></option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-medium small">Select Roll No <span class="text-danger">*</span></label>
+                                            <select class="form-select shadow-sm" id="rollNo" name="rollNo" required disabled>
+                                                <option value="" disabled selected>-- First select a batch --</option>
+                                            </select>
+                                            <!-- Loader for Roll Nos -->
+                                            <div id="rollNoLoader" class="text-center mt-2 d-none">
+                                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                                <span class="small text-muted ms-1">Fetching students...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Section 2: Shift To Batch -->
+                                    <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2">2. Shift To Batch</h6>
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-medium small">Select Target Batch <span class="text-danger">*</span></label>
+                                            <select class="form-select shadow-sm" id="targetBatch" name="targetBatch" required>
+                                                <option value="" disabled selected>-- Select Batch --</option>
+                                                <option th:each="b : ${batches}" th:value="${b}" th:text="${b}"></option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Submit Button -->
+                                    <div class="d-flex justify-content-end mt-4">
+                                        <button type="submit" id="shiftBtn" class="btn btn-primary px-4 py-2 fw-medium shadow-sm d-flex align-items-center transition-all">
+                                            <i data-lucide="send" class="me-2" style="width:18px; height:18px;"></i> Shift Student
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Processing State -->
+                                    <div id="processingState" class="text-center py-4 d-none mt-3 rounded bg-light border">
+                                        <div class="vcube-image-loader mb-3">
+                                            <img th:src="@{/images/vcube-round-logo.png}" alt="Loading...">
+                                        </div>
+                                        <h6 class="text-primary fw-bold mb-1">Shifting Student...</h6>
+                                        <p class="small text-muted mb-0">Please wait while we update all Google Sheets.</p>
+                                    </div>
+                                    
+                                    <!-- Message Alert -->
+                                    <div id="alertMessage" class="alert mt-4 d-none" role="alert"></div>
+                                    
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts Fragment -->
+    <th:block th:replace="~{fragments/scripts :: scripts_fragment}"></th:block>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            
+            // Handle Present Batch Change to load students
+            $('#presentBatch').change(function() {
+                const batchNo = $(this).val();
+                if(!batchNo) return;
+                
+                $('#rollNo').prop('disabled', true).html('<option value="" disabled selected>Loading...</option>');
+                $('#rollNoLoader').removeClass('d-none');
+                
+                $.get('/api/batch-shifting/students', { batchNo: batchNo })
+                    .done(function(students) {
+                        $('#rollNo').empty().append('<option value="" disabled selected>-- Select Roll No --</option>');
+                        if(students && students.length > 0) {
+                            students.forEach(st => {
+                                const studentName = st.name || st.Name || 'Unknown';
+                                $('#rollNo').append(`<option value="${st.rollNo}">${st.rollNo} - ${studentName}</option>`);
+                            });
+                            $('#rollNo').prop('disabled', false);
+                        } else {
+                            $('#rollNo').html('<option value="" disabled selected>No students found</option>');
+                        }
+                    })
+                    .fail(function() {
+                        $('#rollNo').html('<option value="" disabled selected>Error loading students</option>');
+                    })
+                    .always(function() {
+                        $('#rollNoLoader').addClass('d-none');
+                    });
+            });
+            
+            // Handle Form Submission
+            $('#batchShiftForm').submit(function(e) {
+                e.preventDefault();
+                
+                const presentBatch = $('#presentBatch').val();
+                const rollNo = $('#rollNo').val();
+                const targetBatch = $('#targetBatch').val();
+                
+                if(!presentBatch || !rollNo || !targetBatch) {
+                    showAlert('warning', 'Please fill all required fields.');
+                    return;
+                }
+                
+                if(presentBatch === targetBatch) {
+                    showAlert('warning', 'Present batch and Target batch cannot be the same.');
+                    return;
+                }
+                
+                // UI transition
+                $('#shiftBtn').prop('disabled', true).addClass('d-none');
+                $('#processingState').removeClass('d-none').addClass('animate-in');
+                $('#alertMessage').addClass('d-none');
+                
+                $.post('/api/batch-shifting/shift', {
+                    presentBatch: presentBatch,
+                    rollNo: rollNo,
+                    targetBatch: targetBatch
+                })
+                .done(function(response) {
+                    if(response.success) {
+                        showAlert('success', '<i data-lucide="check-circle" class="me-2 d-inline-block" style="width:18px;height:18px"></i> ' + response.message);
+                        // Reset form partially
+                        $('#rollNo').val('');
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    } else {
+                        showAlert('danger', '<i data-lucide="alert-circle" class="me-2 d-inline-block" style="width:18px;height:18px"></i> ' + response.message);
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    }
+                })
+                .fail(function() {
+                    showAlert('danger', '<i data-lucide="x-circle" class="me-2 d-inline-block" style="width:18px;height:18px"></i> Network error occurred while shifting student.');
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                })
+                .always(function() {
+                    $('#shiftBtn').prop('disabled', false).removeClass('d-none');
+                    $('#processingState').addClass('d-none').removeClass('animate-in');
+                });
+            });
+            
+            function showAlert(type, message) {
+                const alertDiv = $('#alertMessage');
+                alertDiv.removeClass('alert-success alert-danger alert-warning d-none')
+                        .addClass(`alert-${type} animate-in`)
+                        .html(message);
+            }
+            
+        });
+    </script>
+    
+    <style>
+        .animate-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .transition-all {
+            transition: all 0.3s ease;
+        }
+        
+        select.form-select:focus {
+            border-color: var(--primary-bg);
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        }
+    </style>
+</body>
+</html>
