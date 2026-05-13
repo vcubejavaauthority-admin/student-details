@@ -1,0 +1,89 @@
+/* ============================================
+   BATCH REPORT PAGE STYLES
+   ============================================ */
+
+/* ═══════════════════════════════════════════
+   Report Tab Buttons
+   ═══════════════════════════════════════════ */
+.report-tab-btn {
+    padding: 10px 20px;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+}
+.report-tab-btn:hover {
+    border-color: var(--primary-bg);
+    color: var(--primary-bg);
+    background: rgba(59, 130, 246, 0.06);
+}
+.report-tab-btn.active {
+    border-color: var(--primary-bg);
+    background: var(--primary-bg);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+.report-tab-btn i {
+    filter: none !important;
+    transform: none !important;
+}
+
+/* ═══════════════════════════════════════════
+   Report-specific Dark Mode Enhancements
+   ═══════════════════════════════════════════ */
+
+/* Status badges - premium dark mode colors */
+.status-pass {
+    background: rgba(52, 211, 153, 0.15) !important;
+    color: #34d399 !important;
+}
+.status-fail {
+    background: rgba(251, 113, 133, 0.15) !important;
+    color: #fb7185 !important;
+}
+:root:not([data-theme="dark"]) .status-pass {
+    background: rgba(25, 135, 84, 0.1) !important;
+    color: #198754 !important;
+}
+:root:not([data-theme="dark"]) .status-fail {
+    background: rgba(220, 53, 69, 0.1) !important;
+    color: #dc3545 !important;
+}
+
+/* Progress bar colors */
+.progress-high { background-color: #34d399 !important; }
+.progress-mid { background-color: #fbbf24 !important; }
+.progress-low { background-color: #fb7185 !important; }
+:root:not([data-theme="dark"]) .progress-high { background-color: #198754 !important; }
+:root:not([data-theme="dark"]) .progress-mid { background-color: #ffc107 !important; }
+:root:not([data-theme="dark"]) .progress-low { background-color: #dc3545 !important; }
+
+/* Table enhancements */
+.report-thead-row {
+    background: var(--bg-body);
+    border-bottom: 2px solid var(--border-color);
+}
+#reportTable th { position: sticky; top: 0; z-index: 10; background: var(--bg-card); }
+#reportTable tbody tr { transition: background-color 0.15s ease; }
+#reportTable tbody tr:hover { background-color: rgba(59, 130, 246, 0.06) !important; }
+[data-theme="dark"] #reportTable tbody tr:hover { background-color: rgba(96, 165, 250, 0.08) !important; }
+.progress { background-color: var(--bg-body); }
+
+/* Card number animation */
+#summaryCards h2 { transition: all 0.3s ease; }
+
+/* Chart container responsive */
+@media (max-width: 767.98px) {
+    #pieChart { max-height: 250px !important; }
+}
+
+/* Dark mode summary card accents */
+[data-theme="dark"] .summary-card-1 { border-left: 3px solid #60a5fa !important; }
+[data-theme="dark"] .summary-card-2 { border-left: 3px solid #34d399 !important; }
+[data-theme="dark"] .summary-card-3 { border-left: 3px solid #fb7185 !important; }
+[data-theme="dark"] .summary-card-4 { border-left: 3px solid #fbbf24 !important; }
