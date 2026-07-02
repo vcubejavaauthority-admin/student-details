@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head_fragment('Weekly GUT-Exam Report - Vcube Admin')}">
+</head>
+<style>
+.status-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-weight: 600;
+}
+.status-sent {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+    border: 1px solid rgba(40, 167, 69, 0.2);
+}
+.status-pending {
+    background: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+    border: 1px solid rgba(255, 193, 7, 0.2);
+}
+.pass-badge {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+.fail-badge {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+.glass-table {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    overflow: hidden;
+}
+.chart-container {
+    position: relative;
+    height: 250px;
+    width: 100%;
+}
+/* Progress Loader */
+.loading-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: var(--glass-bg);
+	backdrop-filter: blur(5px);
+	z-index: 9999;
+	display: none;
+	align-items: center;
+	justify-content: center;
+}
+.loading-overlay.show {
+	display: flex !important;
+}
+.progress-bar-container {
+    width: 300px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 15px;
+}
+.progress-bar-inner {
+    height: 10px;
+    background: #0d6efd;
+    width: 0%;
+    transition: width 0.3s;
+}
+</style>
+<body>
+    <div id="loader" class="loading-overlay">
+		<div class="text-center">
+			<div class="vcube-image-loader mb-3 mx-auto">
+				<img th:src="@{/images/vcube-round-logo.png}" alt="Loading...">
+			</div>
+            <h5 class="fw-bold text-dark" id="loaderTitle">Loading Data...</h5>
+            <p class="text-muted small mb-0" id="loaderProgressText"></p>
+            <div class="progress-bar-container mx-auto" id="progressBarWrapper">
+                <div class="progress-bar-inner" id="progressBarInner"></div>
+            </div>
+		</div>
+	</div>
+
+    <div class="wrapper">
+        <!-- Sidebar Fragment -->
+        <th:block th:replace="~{fragments/sidebar :: sidebar_fragment}"></th:block>
+        
+        <!-- Main Content Area -->
+        <div id="content">
+            <!-- Header Fragment -->
+            <th:block th:replace="~{fragments/header :: header_fragment('Weekly GUT-Exam Report')}"></th:block>
+            
+            <!-- Page Content -->
+            <div class="container-fluid p-4 page-enter">
+                
+                <!-- Filter Panel -->
+                <div class="card glass-card border-0 mb-4 shadow-sm">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-4 d-flex align-items-center">
+                            <i class="lucide-calendar me-2 text-primary"></i> Select Report Date
+                        </h5>
+                        
+                        <form action="/weekly-gut-exam-report" method="post" id="reportForm">
+                            <div class="row g-3 align-items-end">
+                                <!-- Year Selector -->
+                                <div class="col-md-4 col-sm-6">
+                                    <label for="yearSelect" class="form-label small fw-bold text-muted">Select Year</label>
+                                    <select class="form-select shadow-sm" id="yearSelect" name="year" required>
+                                        <option value="" disabled selected>Select year...</option>
+                                        <option th:each="entry : ${years}" 
+                                                th:value="${entry.key}" 
+                                                th:data-sheet-id="${entry.value}"
+                                                th:text="${entry.key}"
+                                                th:selected="${entry.key == selectedYear}"></option>
+                                    </select>
+                                    <!-- Hidden input to store spreadsheetId so it gets submitted -->
+                                    <input type="hidden" name="spreadsheetId" id="spreadsheetIdInput" th:value="${selectedSpreadsheetId}" />
+                                </div>
+
+                                <!-- Spreadsheet / Sheet Name Selector -->
+                                <div class="col-md-5 col-sm-6">
+                                    <label for="sheetSelect" class="form-label small fw-bold text-muted">Spread sheets (Report Date)</label>
+                                    <select class="form-select shadow-sm" id="sheetSelect" name="sheetName" required disabled>
+                                        <option value="" disabled selected>Select spread sheet...</option>
+                                        <!-- Will be populated via AJAX -->
+                                    </select>
+                                </div>
+
+                                <!-- Generate Button -->
+                                <div class="col-md-3 col-sm-12">
+                                    <button type="submit" class="btn btn-primary fw-bold w-100 shadow-sm" id="generateReportBtn" disabled>
+                                        <i class="lucide-bar-chart-2 me-2" style="width:18px;"></i> Generate Report
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Loading State (for AJAX dropdown fetching) -->
+                <div id="dropdownLoading" class="d-none mb-3">
+                    <div class="d-flex align-items-center text-primary">
+                        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                        <span class="small fw-bold">Fetching available sheets...</span>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div th:if="${records == null}" id="emptyState" class="text-center py-5">
+                    <div style="font-size: 4rem; opacity: 0.3; margin-bottom: 1rem;">📊</div>
+                    <h5 class="text-muted fw-bold">Select Year and Report Date</h5>
+                    <p class="text-muted small">Choose the year and the specific weekly sheet to view the GUT-Exam report.</p>
+                </div>
+
+                <!-- Report Content -->
+                <div th:if="${records != null}" id="reportContent" class="fade-in-up">
+                    
+                    <!-- Dynamic Interactive Slicers / Filters -->
+                    <div class="card glass-card border-0 mb-4 shadow-sm bg-light bg-opacity-50">
+                        <div class="card-body p-3">
+                            <div class="row g-3 align-items-center">
+                                <div class="col-md-1">
+                                    <span class="small fw-bold text-muted text-uppercase d-flex align-items-center">
+                                        <i class="lucide-filter me-1 text-primary"></i> Filters:
+                                    </span>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <select class="form-select form-select-sm shadow-sm" id="filterBatch">
+                                        <option value="ALL">All Batches</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <select class="form-select form-select-sm shadow-sm" id="filterMarks">
+                                        <option value="ALL">All Marks</option>
+                                        <option value="PASS">Pass (>= 25)</option>
+                                        <option value="FAIL">Fail (< 25)</option>
+                                        <option value="EXCELLENT">Excellent (>= 40)</option>
+                                        <option value="CRITICAL">Critical (< 15)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <select class="form-select form-select-sm shadow-sm" id="filterShortlist">
+                                        <option value="ALL">All Statuses</option>
+                                        <option value="SHORTLIST">Shortlisted</option>
+                                        <option value="NOT_SHORTLIST">Not Shortlisted</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 text-end">
+                                    <button class="btn btn-sm btn-outline-secondary rounded-pill" id="resetFilters">
+                                        <i class="lucide-refresh-cw me-1" style="width:14px;"></i> Reset Filters
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Summary Cards -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-xl-3 col-md-6">
+                            <div class="card glass-card border-0 shadow-sm border-start border-4 border-info">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="p-2 rounded-3 me-3 bg-info bg-opacity-10 text-info">
+                                            <i class="lucide-users"></i>
+                                        </div>
+                                        <span class="small fw-bold text-muted text-uppercase">Total Records</span>
+                                    </div>
+                                    <h2 class="fw-bold mb-0" id="statTotal">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6">
+                            <div class="card glass-card border-0 shadow-sm border-start border-4 border-success">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="p-2 rounded-3 me-3 bg-success bg-opacity-10 text-success">
+                                            <i class="lucide-check-circle"></i>
+                                        </div>
+                                        <span class="small fw-bold text-muted text-uppercase">Shortlisted</span>
+                                    </div>
+                                    <h2 class="fw-bold mb-0 text-success" id="statPass">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6">
+                            <div class="card glass-card border-0 shadow-sm border-start border-4 border-danger">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="p-2 rounded-3 me-3 bg-danger bg-opacity-10 text-danger">
+                                            <i class="lucide-x-circle"></i>
+                                        </div>
+                                        <span class="small fw-bold text-muted text-uppercase">Not Shortlisted</span>
+                                    </div>
+                                    <h2 class="fw-bold mb-0 text-danger" id="statFail">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6">
+                            <div class="card glass-card border-0 shadow-sm border-start border-4 border-warning">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="p-2 rounded-3 me-3 bg-warning bg-opacity-10 text-warning">
+                                            <i class="lucide-award"></i>
+                                        </div>
+                                        <span class="small fw-bold text-muted text-uppercase">Average Score</span>
+                                    </div>
+                                    <h2 class="fw-bold mb-0 text-warning" id="statAvg">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PowerBI Charts Row -->
+                    <div class="row g-4 mb-4">
+                        <!-- Left Chart: Pass/Fail Ratio (Doughnut) -->
+                        <div class="col-lg-5">
+                            <div class="card glass-card border-0 shadow-sm">
+                                <div class="card-header bg-transparent border-0 pt-4 ps-4">
+                                    <h6 class="fw-bold text-dark mb-0">
+                                        <i class="lucide-pie-chart me-2 text-primary"></i> Shortlisted vs Not Shortlisted
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="passFailChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Right Chart: Marks Distribution (Bar) -->
+                        <div class="col-lg-7">
+                            <div class="card glass-card border-0 shadow-sm">
+                                <div class="card-header bg-transparent border-0 pt-4 ps-4">
+                                    <h6 class="fw-bold text-dark mb-0">
+                                        <i class="lucide-bar-chart-2 me-2 text-primary"></i> Marks Distribution (out of 50)
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="chart-container">
+                                        <canvas id="marksBarChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Data Table -->
+                    <div class="card glass-card border-0 mb-5 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h6 class="fw-bold mb-0 d-flex align-items-center">
+                                    <i class="lucide-table me-2 text-secondary"></i> 
+                                    Report Details: <span class="ms-2 text-primary" th:text="${selectedSheetName}"></span>
+                                </h6>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-primary fw-bold rounded-pill px-3 shadow-sm" id="btnSendAllPending">
+                                        <i class="lucide-send me-1"></i> Send Mail to All Pending
+                                    </button>
+                                    <span class="badge bg-primary d-flex align-items-center px-3" id="tableRecordCount">0 students</span>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle" id="reportTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>S/No</th>
+                                            <th>Batch & Rollno</th>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th class="text-center">Marks(50)</th>
+                                            <th class="text-center">Rating</th>
+                                            <th class="text-center">Status</th>
+                                            <th class="text-center">Notify Status</th>
+                                            <th class="text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:if="${records.empty}" id="noDataRow">
+                                            <td colspan="9" class="text-center text-muted py-4">No data found in the selected sheet.</td>
+                                        </tr>
+                                        <tr th:each="record : ${records}" class="student-row"
+                                            th:data-sno="${record.serialNo}"
+                                            th:data-roll="${record.batchAndRollNo}"
+                                            th:data-name="${record.name}"
+                                            th:data-email="${record.email}"
+                                            th:data-marks="${record.marks}"
+                                            th:data-stars="${record.starRating}"
+                                            th:data-status="${record.notificationStatus}"
+                                            th:data-status-val="${record.status}">
+                                            <td class="fw-bold text-secondary" th:text="${record.serialNo}"></td>
+                                            <td>
+                                                <span class="badge bg-light text-dark border border-secondary border-opacity-25 shadow-sm" 
+                                                      th:text="${record.batchAndRollNo}">
+                                                </span>
+                                            </td>
+                                            <td class="fw-bold text-dark" th:text="${record.name}"></td>
+                                            <td class="small text-muted" th:text="${record.email}"></td>
+                                            <td class="text-center fw-bold" th:text="${record.marks}"></td>
+                                            <td class="text-center text-warning fs-5" th:text="${record.starRating}"></td>
+                                            <td class="text-center">
+                                                <span class="status-badge" th:classappend="${record.status == 'shortlist' ? 'pass-badge' : 'fail-badge'}" 
+                                                      th:text="${record.status == 'shortlist' ? 'Shortlisted' : 'Not Shortlisted'}">
+                                                </span>
+                                            </td>
+                                            <td class="text-center notify-status-container">
+                                                <span class="status-badge" th:classappend="${#strings.toLowerCase(record.notificationStatus) == 'sent' ? 'status-sent' : 'status-pending'}">
+                                                    <i class="lucide-icon me-1" th:classappend="${#strings.toLowerCase(record.notificationStatus) == 'sent' ? 'lucide-check' : 'lucide-clock'}"></i>
+                                                    <span class="status-text" th:text="${record.notificationStatus}">Pending</span>
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-warning rounded-pill btn-send-email px-3 fw-bold" th:disabled="${#strings.toLowerCase(record.notificationStatus) == 'sent'}">
+                                                    <i class="lucide-send me-1" style="width:14px;"></i> Send
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts Fragment -->
+    <th:block th:replace="~{fragments/scripts :: scripts_fragment}"></th:block>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Chart.js is already imported via head.html -->
+
+    <!-- Page Script -->
+    <script th:inline="javascript">
+    $(document).ready(function() {
+        const yearSelect = $('#yearSelect');
+        const sheetSelect = $('#sheetSelect');
+        const spreadsheetIdInput = $('#spreadsheetIdInput');
+        const generateBtn = $('#generateReportBtn');
+        const dropdownLoading = $('#dropdownLoading');
+
+        // Pre-selected values from backend after submit
+        const selectedYear = /*[[${selectedYear}]]*/ null;
+        const selectedSheetName = /*[[${selectedSheetName}]]*/ null;
+        const spreadsheetId = /*[[${selectedSpreadsheetId}]]*/ null;
+
+        function loadSheetsForYear(spreadsheetId, preselectSheetName) {
+            sheetSelect.empty();
+            sheetSelect.append('<option value="" disabled selected>Select spread sheet...</option>');
+            sheetSelect.prop('disabled', true);
+            generateBtn.prop('disabled', true);
+            dropdownLoading.removeClass('d-none');
+
+            $.ajax({
+                url: '/api/weekly-gut-exam/sheets',
+                type: 'GET',
+                data: { spreadsheetId: spreadsheetId },
+                success: function(data) {
+                    dropdownLoading.addClass('d-none');
+                    sheetSelect.prop('disabled', false);
+                    
+                    if (data && data.length > 0) {
+                        data.forEach(function(sheetName) {
+                            // Filter out config or metadata tabs
+                            if(sheetName !== 'GUT-Exam-List' && sheetName !== 'Sheet1' && sheetName !== 'Student-Info' && sheetName !== 'GUT-Exams') {
+                                const selectedStr = (sheetName === preselectSheetName) ? 'selected' : '';
+                                sheetSelect.append(`<option value="${sheetName}" ${selectedStr}>${sheetName}</option>`);
+                            }
+                        });
+                        
+                        // Enable generate button if a valid sheet is selected/pre-selected
+                        if (sheetSelect.val()) {
+                            generateBtn.prop('disabled', false);
+                        }
+                    } else {
+                        sheetSelect.append('<option value="" disabled>No sheets found</option>');
+                    }
+                },
+                error: function() {
+                    dropdownLoading.addClass('d-none');
+                    alert('Error fetching sheets. Please check the spreadsheet ID or permissions.');
+                }
+            });
+        }
+
+        // On Year Change
+        yearSelect.change(function() {
+            const selectedOption = $(this).find('option:selected');
+            const sheetId = selectedOption.data('sheet-id');
+            spreadsheetIdInput.val(sheetId);
+            
+            if (sheetId) {
+                loadSheetsForYear(sheetId, null);
+            } else {
+                sheetSelect.empty().append('<option value="" disabled selected>Select spread sheet...</option>').prop('disabled', true);
+                generateBtn.prop('disabled', true);
+            }
+        });
+
+        // On Sheet Change
+        sheetSelect.change(function() {
+            if ($(this).val()) {
+                generateBtn.prop('disabled', false);
+            } else {
+                generateBtn.prop('disabled', true);
+            }
+        });
+
+        // If there was a pre-selected year (on POST back)
+        if (selectedYear) {
+            const selectedOption = yearSelect.find('option:selected');
+            const sheetId = selectedOption.data('sheet-id');
+            if (sheetId) {
+                loadSheetsForYear(sheetId, selectedSheetName);
+            }
+        }
+        
+        // Add form submission loading state
+        $('#reportForm').submit(function() {
+            generateBtn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Loading...');
+            generateBtn.prop('disabled', true);
+        });
+
+        // ==========================================
+        // DYNAMIC FILTERING & CHARTING LOGIC
+        // ==========================================
+        let passFailChart = null;
+        let marksBarChart = null;
+
+        // Parse Batch from RollNo
+        function getBatchFromRollNo(rollNo) {
+            if (!rollNo) return 'Unknown';
+            const parts = rollNo.trim().split('-');
+            if (parts.length >= 2) {
+                return parts[0] + '-' + parts[1];
+            }
+            return rollNo;
+        }
+
+        // Initialize dynamic batch filter options on page load
+        if ($('.student-row').length > 0) {
+            const uniqueBatches = new Set();
+            $('.student-row').each(function() {
+                const rollNo = $(this).data('roll');
+                const batch = getBatchFromRollNo(rollNo);
+                uniqueBatches.add(batch);
+            });
+            const filterBatchSelect = $('#filterBatch');
+            uniqueBatches.forEach(b => {
+                filterBatchSelect.append(`<option value="${b}">${b}</option>`);
+            });
+
+            // Initialize Charts
+            initCharts();
+            updateDashboard();
+        }
+
+        // Apply filters & update charts
+        function updateDashboard() {
+            const selectedBatch = $('#filterBatch').val();
+            const selectedMarksRange = $('#filterMarks').val();
+            const selectedShortlist = $('#filterShortlist').val();
+            let visibleCount = 0;
+            let shortlistCount = 0;
+            let notShortlistCount = 0;
+            let totalMarks = 0;
+            let marksWithScoreCount = 0;
+
+            const filteredRecords = [];
+
+            $('.student-row').each(function() {
+                const row = $(this);
+                const rollNo = row.data('roll');
+                const batch = getBatchFromRollNo(rollNo);
+                const marksStr = String(row.data('marks')).trim();
+                const marks = parseFloat(marksStr) || 0;
+                const statusVal = String(row.data('status-val')).trim().toLowerCase();
+
+                // 1. Batch Filter check
+                let matchBatch = (selectedBatch === 'ALL' || batch === selectedBatch);
+
+                // 2. Marks Filter check
+                let matchMarks = false;
+                if (selectedMarksRange === 'ALL') {
+                    matchMarks = true;
+                } else if (selectedMarksRange === 'PASS') {
+                    matchMarks = (!isNaN(parseFloat(marksStr)) && marks >= 25.0);
+                } else if (selectedMarksRange === 'FAIL') {
+                    matchMarks = (isNaN(parseFloat(marksStr)) || marks < 25.0);
+                } else if (selectedMarksRange === 'EXCELLENT') {
+                    matchMarks = (!isNaN(parseFloat(marksStr)) && marks >= 40.0);
+                } else if (selectedMarksRange === 'CRITICAL') {
+                    matchMarks = (isNaN(parseFloat(marksStr)) || marks < 15.0);
+                }
+
+                // 3. Shortlist Filter check
+                let matchShortlist = false;
+                if (selectedShortlist === 'ALL') {
+                    matchShortlist = true;
+                } else if (selectedShortlist === 'SHORTLIST') {
+                    matchShortlist = (statusVal === 'shortlist');
+                } else if (selectedShortlist === 'NOT_SHORTLIST') {
+                    matchShortlist = (statusVal === 'not-shortlist');
+                }
+
+                if (matchBatch && matchMarks && matchShortlist) {
+                    row.show();
+                    visibleCount++;
+                    filteredRecords.push({ marks: marks, statusVal: statusVal });
+
+                    if (!isNaN(parseFloat(marksStr))) {
+                        totalMarks += marks;
+                        marksWithScoreCount++;
+                    }
+                    
+                    if (statusVal === 'shortlist') {
+                        shortlistCount++;
+                    } else {
+                        notShortlistCount++;
+                    }
+                } else {
+                    row.hide();
+                }
+            });
+
+            // Update stats cards
+            $('#statTotal').text(visibleCount);
+            $('#statPass').text(shortlistCount);
+            $('#statFail').text(notShortlistCount);
+            const avg = (marksWithScoreCount > 0) ? (totalMarks / marksWithScoreCount).toFixed(2) : '0.00';
+            $('#statAvg').text(avg);
+
+            $('#tableRecordCount').text(`${visibleCount} students`);
+
+            if (visibleCount === 0) {
+                if ($('#noDataRow').length === 0) {
+                    $('#reportTable tbody').append('<tr id="noDataRow"><td colspan="9" class="text-center text-muted py-4">No records match the current filters.</td></tr>');
+                } else {
+                    $('#noDataRow').show().find('td').text('No records match the current filters.');
+                }
+            } else {
+                $('#noDataRow').hide();
+            }
+
+            // Update Charts
+            updateCharts(filteredRecords);
+        }
+
+        // Reset all filters
+        $('#resetFilters').click(function() {
+            $('#filterBatch').val('ALL');
+            $('#filterMarks').val('ALL');
+            $('#filterShortlist').val('ALL');
+            updateDashboard();
+        });
+
+        // Trigger update on filter changes
+        $('#filterBatch, #filterMarks, #filterShortlist').change(updateDashboard);
+
+        function initCharts() {
+            const ctxPie = document.getElementById('passFailChart').getContext('2d');
+            const ctxBar = document.getElementById('marksBarChart').getContext('2d');
+
+            passFailChart = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Shortlisted', 'Not Shortlisted'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: ['rgba(40, 167, 69, 0.85)', 'rgba(220, 53, 69, 0.85)'],
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: 'var(--text-main)',
+                                font: { size: 12, weight: 'bold' }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+
+            marksBarChart = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ['<15', '15-24', '25-34', '35-44', '45-50'],
+                    datasets: [{
+                        label: 'Students Count',
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: 'rgba(13, 110, 253, 0.85)',
+                        borderColor: '#0d6efd',
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: 'var(--text-main)', font: { weight: 'bold' } }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            ticks: { 
+                                stepSize: 1, 
+                                color: 'var(--text-main)' 
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCharts(filteredRecords) {
+            if (!passFailChart || !marksBarChart) return;
+            
+            let shortlistCount = 0;
+            let notShortlistCount = 0;
+            let marksBuckets = [0, 0, 0, 0, 0]; // <15, 15-24, 25-34, 35-44, 45-50
+
+            filteredRecords.forEach(r => {
+                let marks = parseFloat(r.marks) || 0;
+                let statusVal = r.statusVal;
+                
+                if (statusVal === 'shortlist') {
+                    shortlistCount++;
+                } else {
+                    notShortlistCount++;
+                }
+                
+                if (marks < 15.0) {
+                    marksBuckets[0]++;
+                } else if (marks < 25.0) {
+                    marksBuckets[1]++;
+                } else if (marks < 35.0) {
+                    marksBuckets[2]++;
+                } else if (marks < 45.0) {
+                    marksBuckets[3]++;
+                } else {
+                    marksBuckets[4]++;
+                }
+            });
+
+            // Update Doughnut
+            passFailChart.data.datasets[0].data = [shortlistCount, notShortlistCount];
+            passFailChart.update();
+
+            // Update Bar Chart
+            marksBarChart.data.datasets[0].data = marksBuckets;
+            marksBarChart.update();
+        }
+
+        // ==========================================
+        // EMAIL NOTIFICATION SYSTEM
+        // ==========================================
+        function showLoader(title, progressText, progressPct) {
+            $('#loaderTitle').text(title);
+            $('#loaderProgressText').text(progressText);
+            if (progressPct !== null) {
+                $('#progressBarWrapper').show();
+                $('#progressBarInner').css('width', progressPct + '%');
+            } else {
+                $('#progressBarWrapper').hide();
+            }
+            $('#loader').addClass('show');
+        }
+
+        function hideLoader() {
+            $('#loader').removeClass('show');
+        }
+
+        // Single email send
+        $('.btn-send-email').click(function() {
+            const btn = $(this);
+            const row = btn.closest('.student-row');
+            
+            const studentName = row.data('name');
+            const rollNo = row.data('roll');
+            const email = row.data('email');
+            const marks = String(row.data('marks'));
+            const stars = row.data('stars');
+            const statusVal = row.data('status-val');
+
+            if (!email) {
+                alert('This student does not have an email address listed.');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to send the performance email to ${studentName}?`)) {
+                return;
+            }
+
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Sending...');
+
+            sendEmailRequest(studentName, rollNo, email, marks, stars, statusVal, function(success, message) {
+                if (success) {
+                    // Update notify status column visually
+                    btn.closest('tr').find('.notify-status-container').html(`
+                        <span class="status-badge status-sent">
+                            <i class="lucide-check me-1" style="width:12px;height:12px;"></i> Sent
+                        </span>
+                    `);
+                    btn.html('<i class="lucide-check me-1" style="width:14px;"></i> Sent').removeClass('btn-warning').addClass('btn-success');
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                } else {
+                    alert('Error: ' + message);
+                    btn.prop('disabled', false).html('<i class="lucide-send me-1" style="width:14px;"></i> Send');
+                }
+            });
+        });
+
+        // AJAX sender function
+        function sendEmailRequest(studentName, rollNo, email, marks, stars, statusVal, callback) {
+            $.ajax({
+                url: '/api/weekly-gut-exam/send-email',
+                type: 'POST',
+                data: {
+                    spreadsheetId: spreadsheetId,
+                    sheetName: selectedSheetName,
+                    studentName: studentName,
+                    rollNo: rollNo,
+                    email: email,
+                    marks: marks,
+                    stars: stars,
+                    status: statusVal
+                },
+                success: function(res) {
+                    if (res && res.success) {
+                        callback(true, res.message);
+                    } else {
+                        callback(false, res ? res.message : 'Unknown server error');
+                    }
+                },
+                error: function(err) {
+                    callback(false, 'Failed to connect to email service.');
+                }
+            });
+        }
+
+        // Bulk Email Sender
+        $('#btnSendAllPending').click(function() {
+            const pendingRows = [];
+            
+            // Get all visible rows that are pending
+            $('.student-row:visible').each(function() {
+                const row = $(this);
+                const status = String(row.data('status')).trim().toLowerCase();
+                const email = String(row.data('email')).trim();
+                
+                if (status !== 'sent' && email && email !== '') {
+                    pendingRows.push(row);
+                }
+            });
+
+            if (pendingRows.length === 0) {
+                alert('No pending student records found in the current filtered list.');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to send performance emails to all ${pendingRows.length} pending students?`)) {
+                return;
+            }
+
+            let currentIndex = 0;
+            const total = pendingRows.length;
+
+            showLoader('Sending Bulk Emails...', `Processed 0 of ${total}`, 0);
+            sendNextEmail();
+
+            function sendNextEmail() {
+                if (currentIndex >= total) {
+                    hideLoader();
+                    alert('Bulk email sending completed successfully!');
+                    return;
+                }
+
+                const row = pendingRows[currentIndex];
+                const studentName = row.data('name');
+                const rollNo = row.data('roll');
+                const email = row.data('email');
+                const marks = String(row.data('marks'));
+                const stars = row.data('stars');
+                const statusVal = row.data('status-val');
+                
+                const progressPct = Math.round((currentIndex / total) * 100);
+                showLoader('Sending Bulk Emails...', `Sending to ${studentName} (${currentIndex + 1}/${total})`, progressPct);
+
+                // Disable row button
+                row.find('.btn-send-email').prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status"></span>');
+
+                sendEmailRequest(studentName, rollNo, email, marks, stars, statusVal, function(success, message) {
+                    if (success) {
+                        row.find('.notify-status-container').html(`
+                            <span class="status-badge status-sent">
+                                <i class="lucide-check me-1" style="width:12px;height:12px;"></i> Sent
+                            </span>
+                        `);
+                        row.find('.btn-send-email').html('<i class="lucide-check me-1" style="width:14px;"></i> Sent').removeClass('btn-warning').addClass('btn-success');
+                        row.data('status', 'Sent'); // update memory status
+                    } else {
+                        row.find('.btn-send-email').prop('disabled', false).html('<i class="lucide-send me-1" style="width:14px;"></i> Send');
+                    }
+                    
+                    currentIndex++;
+                    sendNextEmail();
+                });
+            }
+        });
+
+        // Initialize Lucide icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    });
+    </script>
+</body>
+</html>

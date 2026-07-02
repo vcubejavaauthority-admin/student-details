@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head_fragment('Dashboard - Vcube Admin')}">
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar Fragment -->
+        <th:block th:replace="~{fragments/sidebar :: sidebar_fragment}"></th:block>
+        
+        <!-- Main Content Area -->
+        <div id="content">
+            <!-- Header Fragment -->
+            <th:block th:replace="~{fragments/header :: header_fragment('Dashboard Control Panel')}"></th:block>
+            
+            <!-- Page Content -->
+            <div class="container-fluid p-4 page-enter">
+                
+                <!-- Hero Section -->
+                <div class="row justify-content-center mb-4">
+                    <div class="col-lg-12">
+                        <div class="card glass-card border-0">
+                            <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                                <div>
+                                    <h3 class="mb-2 fw-bold text-primary">Welcome to Admin Portal</h3>
+                                    <p class="text-muted mb-0">Quickly manage batches, mark attendance, and view student performance analytics.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Student Search Section -->
+                <div class="row justify-content-center mb-4">
+                    <div class="col-lg-12">
+                        <div class="card glass-card border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <h5 class="fw-bold text-primary mb-3 d-flex align-items-center">
+                                    <i class="lucide-search me-2"></i> Student Directory Quick Search
+                                </h5>
+                                <form id="studentSearchForm" class="row g-3">
+                                    <div class="col-md-7 col-lg-8">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-transparent border-end-0 text-muted">
+                                                <i class="lucide-search" style="width: 18px; height: 18px;"></i>
+                                            </span>
+                                            <input type="text" class="form-control border-start-0 ps-0" id="searchQuery" placeholder="Search by Name, Mobile, or Email..." required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 col-lg-3">
+                                        <select class="form-select" id="searchBatch">
+                                            <option value="">All Batches</option>
+                                            <option th:each="batch : ${batches}" th:value="${batch}" th:text="${batch}"></option>
+                                        </select>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="submit" class="btn btn-primary fw-bold px-4">
+                                            Search
+                                        </button>
+                                    </div>
+                                </form>
+                                
+                                <!-- Search Results Container (Initially Hidden) -->
+                                <div id="searchResultsContainer" class="mt-4 d-none">
+                                    <hr class="border-secondary opacity-25 mb-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="fw-bold text-secondary mb-0">
+                                            <i class="lucide-list me-2"></i> Search Results (<span id="resultsCount">0</span>)
+                                        </h6>
+                                        <button type="button" class="btn btn-sm btn-link text-decoration-none text-muted" id="clearSearchResultsBtn">
+                                            <i class="lucide-x me-1"></i> Clear
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Skeleton Loader -->
+                                    <div id="searchSkeleton" class="d-none">
+                                        <div class="table-responsive">
+                                            <table class="table align-middle">
+                                                <thead>
+                                                    <tr>
+                                                        <th style="width: 10%">Batch</th>
+                                                        <th style="width: 15%">Roll No</th>
+                                                        <th>Name</th>
+                                                        <th>Mobile</th>
+                                                        <th>Email</th>
+                                                        <th style="width: 10%">Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr class="placeholder-glow" th:each="i : ${#numbers.sequence(1, 3)}">
+                                                        <td><span class="placeholder col-6 rounded"></span></td>
+                                                        <td><span class="placeholder col-8 rounded"></span></td>
+                                                        <td><span class="placeholder col-10 rounded"></span></td>
+                                                        <td><span class="placeholder col-8 rounded"></span></td>
+                                                        <td><span class="placeholder col-10 rounded"></span></td>
+                                                        <td><span class="placeholder col-6 rounded"></span></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Results Table -->
+                                    <div id="searchResultsTableContainer" class="table-responsive">
+                                        <table class="table table-hover align-middle" id="searchResultsTable">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Batch</th>
+                                                    <th>Roll No</th>
+                                                    <th>Name</th>
+                                                    <th>Mobile</th>
+                                                    <th>Email</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="searchResultsBody">
+                                                <!-- Dynamic Content -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <!-- No Results State -->
+                                    <div id="searchNoResults" class="text-center p-5 d-none">
+                                        <div class="mb-3">
+                                            <i class="lucide-alert-circle text-muted" style="width: 48px; height: 48px;"></i>
+                                        </div>
+                                        <h6 class="fw-bold text-muted">No students found</h6>
+                                        <p class="text-muted small mb-0">No active/online/placed/drop/add-on students match your search.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Placement Filtration Section -->
+                <div class="row justify-content-center mb-4">
+                    <div class="col-lg-12">
+                        <div class="card glass-card border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <h5 class="fw-bold text-primary mb-3 d-flex align-items-center">
+                                    <i class="lucide-graduation-cap me-2" style="color: var(--primary-color);"></i> Placement Filtration Dashboard
+                                </h5>
+                                
+                                <!-- Search and Batch Configuration -->
+                                <div class="row g-3 mb-4 border-bottom pb-3">
+                                    <div class="col-md-3">
+                                        <label for="placementBatchType" class="form-label small fw-bold text-muted">Batch Status</label>
+                                        <select class="form-select" id="placementBatchType">
+                                            <option value="active" selected>Active Batches</option>
+                                            <option value="inactive">In-active Batches</option>
+                                            <option value="all">All Batches</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="placementBatchSelect" class="form-label small fw-bold text-muted">Select Batch No</label>
+                                        <select class="form-select" id="placementBatchSelect">
+                                            <option value="">All Batches</option>
+                                            <option th:each="batch : ${batches}" th:value="${batch}" th:text="${batch}"></option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 d-flex align-items-end">
+                                        <button type="button" class="btn btn-primary fw-bold px-4 w-100 animate-hover" id="placementSearchBtn">
+                                            <i class="lucide-refresh-cw me-2" style="width: 18px; height: 18px;"></i> Fetch Student Details
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Dynamic Filtration Dropdowns -->
+                                <div class="row g-3 mb-4">
+                                    <div class="col-sm-6 col-md-3">
+                                        <label for="filterQual" class="form-label small fw-bold text-muted">Qualification</label>
+                                        <select class="form-select" id="filterQual" disabled>
+                                            <option value="">All Qualifications</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-6 col-md-3">
+                                        <label for="filterBranch" class="form-label small fw-bold text-muted">Branch / Stream</label>
+                                        <select class="form-select" id="filterBranch" disabled>
+                                            <option value="">All Branches</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-6 col-md-3">
+                                        <label for="filterYear" class="form-label small fw-bold text-muted">Passed Out Year</label>
+                                        <select class="form-select" id="filterYear" disabled>
+                                            <option value="">All Years</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-6 col-md-3">
+                                        <label for="filterPct" class="form-label small fw-bold text-muted">Min Percentage</label>
+                                        <select class="form-select" id="filterPct" disabled>
+                                            <option value="">Any Percentage</option>
+                                            <option value="60">&gt;= 60%</option>
+                                            <option value="70">&gt;= 70%</option>
+                                            <option value="80">&gt;= 80%</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Results Section -->
+                                <div id="placementResultsContainer">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="fw-bold text-secondary mb-0">
+                                            <i class="lucide-users me-2"></i> Filtered Students (<span id="placementCount">0</span>)
+                                        </h6>
+                                    </div>
+
+                                    <!-- Skeleton Loader -->
+                                    <div id="placementSkeleton" class="d-none">
+                                        <div class="table-responsive">
+                                            <table class="table align-middle">
+                                                <thead>
+                                                    <tr>
+                                                        <th style="width: 10%">Batch</th>
+                                                        <th style="width: 15%">Roll No</th>
+                                                        <th>Name</th>
+                                                        <th>UG Degree</th>
+                                                        <th>Branch</th>
+                                                        <th>Year</th>
+                                                        <th>Percentage</th>
+                                                        <th>Mobile</th>
+                                                        <th>Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr class="placeholder-glow" th:each="i : ${#numbers.sequence(1, 3)}">
+                                                        <td><span class="placeholder col-6 rounded"></span></td>
+                                                        <td><span class="placeholder col-8 rounded"></span></td>
+                                                        <td><span class="placeholder col-10 rounded"></span></td>
+                                                        <td><span class="placeholder col-6 rounded"></span></td>
+                                                        <td><span class="placeholder col-8 rounded"></span></td>
+                                                        <td><span class="placeholder col-4 rounded"></span></td>
+                                                        <td><span class="placeholder col-5 rounded"></span></td>
+                                                        <td><span class="placeholder col-8 rounded"></span></td>
+                                                        <td><span class="placeholder col-6 rounded"></span></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <!-- Placement Results Table -->
+                                    <div id="placementTableContainer" class="table-responsive">
+                                        <table class="table table-hover align-middle mb-0" id="placementResultsTable">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Batch</th>
+                                                    <th>Roll No</th>
+                                                    <th>Name</th>
+                                                    <th>UG Degree</th>
+                                                    <th>Branch</th>
+                                                    <th>Year</th>
+                                                    <th>Percentage (UG/PG)</th>
+                                                    <th>Mobile</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="placementResultsBody">
+                                                <tr>
+                                                    <td colspan="9" class="text-center py-4 text-muted">
+                                                        <i class="lucide-info me-2"></i> Use the "Fetch Student Details" button to load placement sheet data.
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <!-- No Results -->
+                                    <div id="placementNoResults" class="text-center p-5 d-none">
+                                        <div class="mb-3">
+                                            <i class="lucide-alert-circle text-muted" style="width: 48px; height: 48px;"></i>
+                                        </div>
+                                        <h6 class="fw-bold text-muted">No students match the selected filters</h6>
+                                        <p class="text-muted small mb-0">Try adjusting your qualification, branch, year, or percentage options.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main menu cards -->
+
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+                    
+                    <!-- Attendance -->
+                    <div class="col">
+                        <a th:href="@{/attendance}" class="text-decoration-none">
+                            <div class="card glass-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="p-2 bg-success bg-opacity-10 rounded-3">
+                                            <i class="lucide-user-check text-success fa-lg"></i>
+                                        </div>
+                                        <span class="badge bg-success">Action</span>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Mark Attendance</h5>
+                                    <p class="card-text text-muted small">Select batch, enter roll numbers and instantly mark attendance.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <!-- Mocks -->
+                    <div class="col">
+                        <a th:href="@{/mock}" class="text-decoration-none">
+                            <div class="card glass-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="p-2 bg-warning bg-opacity-10 rounded-3">
+                                            <i class="lucide-pen-tool text-warning fa-lg"></i>
+                                        </div>
+                                        <span class="badge bg-warning text-dark">Marks</span>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Mock Marks</h5>
+                                    <p class="card-text text-muted small">Select batch, enter roll numbers to add mock session marks.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <!-- Exams -->
+                    <div class="col">
+                        <a th:href="@{/exam}" class="text-decoration-none">
+                            <div class="card glass-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="p-2 bg-primary bg-opacity-10 rounded-3">
+                                            <i class="lucide-book-open text-primary fa-lg"></i>
+                                        </div>
+                                        <span class="badge bg-primary">Marks</span>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Exam Marks</h5>
+                                    <p class="card-text text-muted small">Select batch, enter roll numbers and add marks for exams.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- Case-Study -->
+                    <div class="col">
+                        <a th:href="@{/caseStudy}" class="text-decoration-none">
+                            <div class="card glass-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="p-2 bg-info bg-opacity-10 rounded-3">
+                                            <i class="lucide-briefcase text-info fa-lg"></i>
+                                        </div>
+                                        <span class="badge bg-info text-dark">Marks</span>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Case-Study</h5>
+                                    <p class="card-text text-muted small">Select batch, enter roll numbers and evaluate case studies.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- Projects -->
+                    <div class="col">
+                        <a th:href="@{/projects/form}" class="text-decoration-none">
+                            <div class="card glass-card h-100 border-primary border-opacity-10">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="p-2 bg-primary bg-opacity-10 rounded-3">
+                                            <i class="lucide-folder-kanban text-primary fa-lg"></i>
+                                        </div>
+                                        <span class="badge bg-primary text-white">New</span>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Project Status</h5>
+                                    <p class="card-text text-muted small">Track student progress in Core Java and Web Application projects.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <!-- Mock-Exams -->
+                    <div class="col">
+                        <a th:href="@{/mock-exam}" class="text-decoration-none">
+                            <div class="card glass-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="p-2 bg-secondary bg-opacity-10 rounded-3">
+                                            <i class="lucide-clipboard-list text-secondary fa-lg"></i>
+                                        </div>
+                                        <span class="badge bg-secondary">Marks</span>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Mock-Exam Marks</h5>
+                                    <p class="card-text text-muted small">Select batch, enter roll numbers to add marks for mock-exams.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- GUT-Exams -->
+                    <div class="col">
+                        <a th:href="@{/gut-exam}" class="text-decoration-none">
+                            <div class="card glass-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="p-2 bg-danger bg-opacity-10 rounded-3">
+                                            <i class="lucide-file-text text-danger fa-lg"></i>
+                                        </div>
+                                        <span class="badge bg-danger">Marks</span>
+                                    </div>
+                                    <h5 class="card-title fw-bold">GUT-Exam Marks</h5>
+                                    <p class="card-text text-muted small">Select batch, enter roll numbers to add marks for GUT-exams.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <!-- Attendance Sheet -->
+                    <div class="col">
+                        <a th:href="@{/attendance/filter-students}" class="text-decoration-none">
+                            <div class="card glass-card h-100 border-success">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="p-2 bg-success bg-opacity-25 rounded-3">
+                                            <i class="lucide-activity text-success fa-lg"></i>
+                                        </div>
+                                        <span class="badge bg-success shadow-sm">Live System</span>
+                                    </div>
+                                    <h5 class="card-title fw-bold text-success">Attendance Sheet</h5>
+                                    <p class="card-text text-muted small">View students list, quick search and auto-mark using roll filters.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                     <!-- Emails / Communication -->
+                    <div class="col">
+                        <a th:href="@{/attendance}" class="text-decoration-none">
+                            <div class="card glass-card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="p-2 bg-dark bg-opacity-10 rounded-3">
+                                            <i class="lucide-mail text-secondary fa-lg"></i>
+                                        </div>
+                                        <span class="badge bg-secondary">Emails</span>
+                                    </div>
+                                    <h5 class="card-title fw-bold">Collect Emails</h5>
+                                    <p class="card-text text-muted small">Use attendance screen to generate and copy student email lists.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                </div>
+                
+                <hr class="my-5 border-secondary opacity-25">
+                
+                <h4 class="mb-4 fw-bold text-primary"><i class="lucide-bar-chart-2 me-2"></i>Analytics & Reports</h4>
+                
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
+                    
+                    <!-- Students Mocks -->
+                    <div class="col">
+                        <form th:action="@{/students-mocks}" method="post" class="h-100">
+                            <div class="card glass-card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center">
+                                        <i class="lucide-line-chart me-2 text-info"></i> Mock Details
+                                    </h6>
+                                    <div class="mt-auto">
+                                        <select class="form-select mb-3 shadow-sm" name="batchNo" required>
+                                            <option value="" selected disabled>Select batch</option>
+                                            <option th:each="batch : ${batches}" th:value="${batch}" th:text="${batch}"></option>
+                                        </select>
+                                        <button type="submit" class="btn btn-outline-info w-100 fw-medium">View Analysis</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Students Exams -->
+                    <div class="col">
+                        <form th:action="@{/students-exams}" method="post" class="h-100">
+                            <div class="card glass-card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center">
+                                        <i class="lucide-pie-chart me-2 text-primary"></i> Exam Details
+                                    </h6>
+                                    <div class="mt-auto">
+                                        <select class="form-select mb-3 shadow-sm" name="batchNo" required>
+                                            <option value="" selected disabled>Select batch</option>
+                                            <option th:each="batch : ${batches}" th:value="${batch}" th:text="${batch}"></option>
+                                        </select>
+                                        <button type="submit" class="btn btn-outline-primary w-100 fw-medium">View Analysis</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Students Case-Studies -->
+                    <div class="col">
+                        <form th:action="@{/students-caseStudies}" method="post" class="h-100">
+                            <div class="card glass-card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center">
+                                        <i class="lucide-bar-chart me-2 text-warning"></i> Case-Study Details
+                                    </h6>
+                                    <div class="mt-auto">
+                                        <select class="form-select mb-3 shadow-sm" name="batchNo" required>
+                                            <option value="" selected disabled>Select batch</option>
+                                            <option th:each="batch : ${batches}" th:value="${batch}" th:text="${batch}"></option>
+                                        </select>
+                                        <button type="submit" class="btn btn-outline-warning w-100 fw-medium text-dark">View Analysis</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Students Gut-Exams -->
+                    <div class="col">
+                        <form th:action="@{/students-gut-exams}" method="post" class="h-100">
+                            <div class="card glass-card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center">
+                                        <i class="lucide-gantt-chart-square me-2 text-danger"></i> GUT-Exam Details
+                                    </h6>
+                                    <div class="mt-auto">
+                                        <select class="form-select mb-3 shadow-sm" name="batchNo" required>
+                                            <option value="" selected disabled>Select batch</option>
+                                            <option th:each="batch : ${batches}" th:value="${batch}" th:text="${batch}"></option>
+                                        </select>
+                                        <button type="submit" class="btn btn-outline-danger w-100 fw-medium">View Analysis</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                     <!-- Students Mock-Exams -->
+                    <div class="col">
+                        <form th:action="@{/students-mock-exams}" method="post" class="h-100">
+                            <div class="card glass-card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center">
+                                        <i class="lucide-area-chart me-2 text-secondary"></i> Mock-Exam Details
+                                    </h6>
+                                    <div class="mt-auto">
+                                        <select class="form-select mb-3 shadow-sm" name="batchNo" required>
+                                            <option value="" selected disabled>Select batch</option>
+                                            <option th:each="batch : ${batches}" th:value="${batch}" th:text="${batch}"></option>
+                                        </select>
+                                        <button type="submit" class="btn btn-outline-secondary w-100 fw-medium">View Analysis</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                     <!-- Students Projects -->
+                     <div class="col">
+                        <form th:action="@{/students-projects}" method="post" class="h-100">
+                            <div class="card glass-card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h6 class="fw-bold mb-3 d-flex align-items-center">
+                                        <i class="lucide-network me-2 text-success"></i> Projects Details
+                                    </h6>
+                                    <div class="mt-auto">
+                                        <select class="form-select mb-3 shadow-sm" name="batchNo" required>
+                                            <option value="" selected disabled>Select batch</option>
+                                            <option th:each="batch : ${batches}" th:value="${batch}" th:text="${batch}"></option>
+                                        </select>
+                                        <button type="submit" class="btn btn-outline-success w-100 fw-medium">View Projects</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- 📊 BATCH ATTENDANCE REPORT -->
+                    <div class="col">
+                        <a th:href="@{/batch-report}" class="text-decoration-none h-100 d-block">
+                            <div class="card glass-card h-100 border-success" style="background: rgba(25,135,84,0.05);">
+                                <div class="card-body d-flex flex-column">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="fw-bold mb-0 d-flex align-items-center">
+                                            <i class="lucide-bar-chart-2 me-2 text-success"></i> Batch Attendance Report
+                                        </h6>
+                                        <span class="badge bg-success">Analytics</span>
+                                    </div>
+                                    <p class="text-muted small flex-grow-1">Monthly attendance analytics with charts — regular vs irregular students across batches.</p>
+                                    <button type="button" class="btn btn-outline-success w-100 fw-medium">View Reports</button>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- 🔥 STUDENT DETAILS - Dynamic RollNo 🔥 -->
+                    <div class="col-lg-6 col-xl-4">
+                        <form th:action="@{/student-details}" method="post" class="h-100">
+                            <div class="card glass-card h-100 border-primary shadow-sm" style="background: rgba(13,110,253,0.05);">
+                                <div class="card-body d-flex flex-column">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="card-title fw-bold text-primary mb-0">
+                                            <i class="lucide-user text-primary me-2"></i> Individual Student
+                                        </h5>
+                                        <span class="badge bg-primary">Deep Dive</span>
+                                    </div>
+                                    <p class="text-muted small mb-3 flex-grow-1">Select batch to auto-load roll numbers.</p>
+
+                                    <div class="mb-3">
+                                        <label for="individualBatchType" class="form-label small fw-bold text-muted">Batch Type</label>
+                                        <select class="form-select shadow-sm" id="individualBatchType">
+                                            <option value="active" selected>Active Batches</option>
+                                            <option value="inactive">In-active Batches</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="batchNo" class="form-label small fw-bold text-muted">Select Batch</label>
+                                        <select class="form-select shadow-sm" id="batchNo" name="batchNo" required>
+                                            <option value="" disabled selected>Select batch...</option>
+                                            <option th:each="batch : ${batches}" th:value="${batch}" th:text="${batch}"></option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label for="rollNo" class="form-label small fw-bold text-muted d-flex justify-content-between">
+                                            Select Roll Number
+                                            <div id="rollNoLoading" class="vcube-image-loader-sm d-none" role="status"><img th:src="@{/images/vcube-round-logo.png}" alt="Loading..."></div>
+                                        </label>
+                                        <select class="form-select shadow-sm" id="rollNo" name="rollNo" required disabled>
+                                            <option value="" disabled selected>Wait for batch...</option>
+                                        </select>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm" id="viewBtn" disabled>
+                                        <i class="lucide-eye me-2" style="width: 18px;"></i>View Comprehensive Report
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Placement Details Modal -->
+    <div class="modal fade" id="placementDetailsModal" tabindex="-1" aria-labelledby="placementDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content glass-card border-0 shadow-lg">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold text-primary" id="placementDetailsModalLabel">
+                        <i class="lucide-user me-2"></i> Student Placement Profile
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(var(--modal-close-invert, 0));"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    <div class="row g-4">
+                        <!-- Photo & Quick Info -->
+                        <div class="col-md-4 text-center">
+                            <div class="d-inline-block position-relative mb-3">
+                                <img id="detailPhoto" src="" alt="Student Photo" class="rounded-circle shadow-sm" style="width: 140px; height: 140px; object-fit: cover; border: 4px solid var(--border-color);" onerror="this.src='https://via.placeholder.com/140x140?text=No+Photo'">
+                            </div>
+                            <h4 id="detailName" class="fw-bold text-primary mb-1"></h4>
+                            <p id="detailRollNo" class="text-muted mb-0 fw-semibold"></p>
+                            <span id="detailBatch" class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 mt-2"></span>
+                        </div>
+                        
+                        <!-- Full Details Formatted into Tabs or Sections -->
+                        <div class="col-md-8">
+                            <!-- Navigation tabs -->
+                            <ul class="nav nav-pills nav-fill mb-3" id="pills-tab" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active fw-bold small text-uppercase" id="pills-personal-tab" data-bs-toggle="pill" data-bs-target="#pills-personal" type="button" role="tab" aria-controls="pills-personal" aria-selected="true">Personal</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link fw-bold small text-uppercase" id="pills-academic-tab" data-bs-toggle="pill" data-bs-target="#pills-academic" type="button" role="tab" aria-controls="pills-academic" aria-selected="false">Academic</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link fw-bold small text-uppercase" id="pills-experience-tab" data-bs-toggle="pill" data-bs-target="#pills-experience" type="button" role="tab" aria-controls="pills-experience" aria-selected="false">Experience</button>
+                                </li>
+                            </ul>
+                            
+                            <div class="tab-content" id="pills-tabContent">
+                                <!-- Personal Details Tab -->
+                                <div class="tab-pane fade show active" id="pills-personal" role="tabpanel" aria-labelledby="pills-personal-tab">
+                                    <div class="row g-3">
+                                        <div class="col-6">
+                                            <label class="text-muted small fw-semibold d-block">Mobile</label>
+                                            <span id="detailMobile" class="fw-semibold text-body"></span>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="text-muted small fw-semibold d-block">Alternate Mobile</label>
+                                            <span id="detailAltMobile" class="fw-semibold text-body"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="text-muted small fw-semibold d-block">E-mail</label>
+                                            <span id="detailEmail" class="fw-semibold text-body"></span>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="text-muted small fw-semibold d-block">Mode of Training</label>
+                                            <span id="detailMode" class="badge bg-secondary text-capitalize px-2 py-1"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Academic Details Tab -->
+                                <div class="tab-pane fade" id="pills-academic" role="tabpanel" aria-labelledby="pills-academic-tab">
+                                    <div class="row g-3">
+                                        <div class="col-6 border-end">
+                                            <h6 class="fw-bold text-primary border-bottom pb-1 mb-2">Under Graduation (UG)</h6>
+                                            <label class="text-muted small fw-semibold d-block">Degree</label>
+                                            <span id="detailUgQual" class="fw-semibold text-body d-block mb-2"></span>
+                                            <label class="text-muted small fw-semibold d-block">Stream/Branch</label>
+                                            <span id="detailUgStream" class="fw-semibold text-body d-block mb-2"></span>
+                                            <label class="text-muted small fw-semibold d-block">Passed Out Year</label>
+                                            <span id="detailUgYear" class="fw-semibold text-body d-block mb-2"></span>
+                                            <label class="text-muted small fw-semibold d-block">Percentage</label>
+                                            <span id="detailUgPct" class="fw-bold text-success"></span>
+                                        </div>
+                                        <div class="col-6">
+                                            <h6 class="fw-bold text-primary border-bottom pb-1 mb-2">Post Graduation (PG)</h6>
+                                            <label class="text-muted small fw-semibold d-block">Degree</label>
+                                            <span id="detailPgQual" class="fw-semibold text-body d-block mb-2">-</span>
+                                            <label class="text-muted small fw-semibold d-block">Passed Out Year</label>
+                                            <span id="detailPgYear" class="fw-semibold text-body d-block mb-2">-</span>
+                                            <label class="text-muted small fw-semibold d-block">Percentage</label>
+                                            <span id="detailPgPct" class="fw-bold text-success">-</span>
+                                        </div>
+                                        <div class="col-12 mt-3 pt-2 border-top">
+                                            <div class="row">
+                                                <div class="col-6">
+                                                    <label class="text-muted small fw-semibold d-block">University</label>
+                                                    <span id="detailUniversity" class="fw-semibold text-body"></span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <label class="text-muted small fw-semibold d-block">College</label>
+                                                    <span id="detailCollege" class="fw-semibold text-body"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Experience Tab -->
+                                <div class="tab-pane fade" id="pills-experience" role="tabpanel" aria-labelledby="pills-experience-tab">
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <label class="text-muted small fw-semibold d-block">Work Experience</label>
+                                            <span id="detailWorkExp" class="fw-semibold text-body"></span>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="text-muted small fw-semibold d-block">Previous Job</label>
+                                            <span id="detailPrevJob" class="fw-semibold text-body"></span>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="text-muted small fw-semibold d-block">Previous Job Role</label>
+                                            <span id="detailPrevRole" class="fw-semibold text-body"></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="text-muted small fw-semibold d-block">Previous Company</label>
+                                            <span id="detailPrevCompany" class="fw-semibold text-body"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-secondary fw-bold px-4" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts Fragment -->
+    <th:block th:replace="~{fragments/scripts :: scripts_fragment}"></th:block>
+    
+    <!-- jQuery Data Fetching Logic (Maintained) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const batchSelect = $('#batchNo');
+            const rollSelect = $('#rollNo');
+            const viewBtn = $('#viewBtn');
+            const loadingDiv = $('#rollNoLoading');
+            const individualBatchType = $('#individualBatchType');
+
+            // Toggle active/inactive batches in the Individual Student form
+            individualBatchType.change(function() {
+                const status = $(this).val();
+                
+                batchSelect.prop('disabled', true).html('<option value="" disabled>Loading batches...</option>');
+                rollSelect.prop('disabled', true).html('<option value="" disabled>Wait for batch...</option>');
+                viewBtn.prop('disabled', true);
+                
+                $.ajax({
+                    url: '/api/batches',
+                    type: 'GET',
+                    data: { status: status },
+                    success: function(data) {
+                        batchSelect.html('<option value="" disabled selected>Select batch...</option>');
+                        if (data && data.length > 0) {
+                            $.each(data, function(idx, batchName) {
+                                batchSelect.append(`<option value="${batchName}">${batchName}</option>`);
+                            });
+                        } else {
+                            batchSelect.html('<option value="">No batches found</option>');
+                        }
+                        batchSelect.prop('disabled', false);
+                    },
+                    error: function() {
+                        batchSelect.html('<option value="">Error loading batches</option>');
+                        batchSelect.prop('disabled', false);
+                    }
+                });
+            });
+
+            // Batch change → Load roll numbers
+            batchSelect.change(function() {
+                const batchNo = $(this).val();
+                
+                if (batchNo) {
+                    rollSelect.prop('disabled', true).html('<option value="" disabled>Loading...</option>');
+                    loadingDiv.removeClass('d-none');
+                    viewBtn.prop('disabled', true);
+                    
+                    $.ajax({
+                        url: '/get-rollnos',
+                        type: 'GET',
+                        data: { batchNo: batchNo },
+                        success: function(data) {
+                            rollSelect.html('<option value="" disabled selected>Select roll number</option>');
+                            if (data && Object.keys(data).length > 0) {
+                                $.each(data, function(rollNo, name) {
+                                    rollSelect.append(`<option value="${rollNo}">${rollNo} - ${name}</option>`);
+                                });
+                            } else {
+                                rollSelect.html('<option value="">No students in this batch</option>');
+                            }
+                            rollSelect.prop('disabled', false);
+                        },
+                        error: function() {
+                            rollSelect.html('<option value="">Error loading roll numbers</option>');
+                            rollSelect.prop('disabled', false);
+                        },
+                        complete: function() {
+                            loadingDiv.addClass('d-none');
+                        }
+                    });
+                } else {
+                    rollSelect.html('<option value="" disabled>Wait for batch...</option>').prop('disabled', true);
+                    viewBtn.prop('disabled', true);
+                }
+            });
+
+            // RollNo change → Enable submit
+            rollSelect.change(function() {
+                viewBtn.prop('disabled', $(this).val() === '');
+            });
+
+            // Student Search Form AJAX Handler
+            const searchForm = $('#studentSearchForm');
+            const resultsContainer = $('#searchResultsContainer');
+            const skeleton = $('#searchSkeleton');
+            const tableContainer = $('#searchResultsTableContainer');
+            const resultsBody = $('#searchResultsBody');
+            const resultsCount = $('#resultsCount');
+            const noResults = $('#searchNoResults');
+            const clearBtn = $('#clearSearchResultsBtn');
+
+            searchForm.submit(function(e) {
+                e.preventDefault();
+                
+                const query = $('#searchQuery').val().trim();
+                const batch = $('#searchBatch').val();
+                
+                // Show container and loading skeleton, hide table/no-results
+                resultsContainer.removeClass('d-none');
+                skeleton.removeClass('d-none');
+                tableContainer.addClass('d-none');
+                noResults.addClass('d-none');
+                resultsBody.empty();
+                
+                $.ajax({
+                    url: '/api/students/search',
+                    type: 'GET',
+                    data: { query: query, batch: batch },
+                    success: function(data) {
+                        skeleton.addClass('d-none');
+                        
+                        if (data && data.length > 0) {
+                            resultsCount.text(data.length);
+                            
+                            $.each(data, function(index, student) {
+                                // Determine status badge styling
+                                let badgeClass = 'bg-secondary';
+                                const status = student.status ? student.status.trim().toLowerCase() : '';
+                                
+                                if (status === 'active') {
+                                    badgeClass = 'bg-success bg-opacity-10 text-success border border-success border-opacity-20';
+                                } else if (status === 'online') {
+                                    badgeClass = 'bg-info bg-opacity-10 text-info border border-info border-opacity-20';
+                                } else if (status === 'placed') {
+                                    badgeClass = 'bg-primary bg-opacity-10 text-primary border border-primary border-opacity-20';
+                                } else if (status === 'drop') {
+                                    badgeClass = 'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20';
+                                } else if (status === 'add-on') {
+                                    badgeClass = 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20';
+                                }
+                                
+                                const mobile = student.mobile ? student.mobile : 'N/A';
+                                const email = student.email ? student.email : 'N/A';
+                                const batchNo = student.batchNo ? student.batchNo : 'N/A';
+                                const studentName = student.name || student.Name || 'N/A';
+                                
+                                const row = `
+                                    <tr>
+                                        <td><span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1">${batchNo}</span></td>
+                                        <td class="fw-bold">${student.rollNo}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="p-1 bg-light rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">
+                                                    <i class="lucide-user text-muted" style="width: 14px; height: 14px;"></i>
+                                                </div>
+                                                <span>${studentName}</span>
+                                            </div>
+                                        </td>
+                                        <td>${mobile}</td>
+                                        <td>${email}</td>
+                                        <td><span class="badge ${badgeClass} text-capitalize px-2 py-1">${student.status || 'Active'}</span></td>
+                                    </tr>
+                                `;
+                                resultsBody.append(row);
+                            });
+                            
+                            tableContainer.removeClass('d-none');
+                            
+                            // Re-initialize Lucide icons if any new ones were rendered
+                            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                                lucide.createIcons();
+                            }
+                        } else {
+                            resultsCount.text('0');
+                            noResults.removeClass('d-none');
+                        }
+                    },
+                    error: function() {
+                        skeleton.addClass('d-none');
+                        resultsCount.text('0');
+                        alert('Error fetching student search results. Please try again.');
+                    }
+                });
+            });
+
+            // Clear button click
+            clearBtn.click(function() {
+                resultsContainer.addClass('d-none');
+                resultsBody.empty();
+                $('#searchQuery').val('');
+                $('#searchBatch').val('');
+            });
+
+            // ======= PLACEMENT FILTRATION DASHBOARD =======
+            let allPlacements = [];
+            
+            const placementBatchType = $('#placementBatchType');
+            const placementBatchSelect = $('#placementBatchSelect');
+            const placementSearchBtn = $('#placementSearchBtn');
+            const placementSkeleton = $('#placementSkeleton');
+            const placementTableContainer = $('#placementTableContainer');
+            const placementResultsBody = $('#placementResultsBody');
+            const placementCount = $('#placementCount');
+            const placementNoResults = $('#placementNoResults');
+            
+            const filterQual = $('#filterQual');
+            const filterBranch = $('#filterBranch');
+            const filterYear = $('#filterYear');
+            const filterPct = $('#filterPct');
+            
+            // Toggle active/inactive batches for Placement
+            placementBatchType.change(function() {
+                const status = $(this).val();
+                
+                placementBatchSelect.prop('disabled', true).html('<option value="">Loading batches...</option>');
+                
+                $.ajax({
+                    url: '/api/batches',
+                    type: 'GET',
+                    data: { status: status },
+                    success: function(data) {
+                        placementBatchSelect.html('<option value="">All Batches</option>');
+                        if (data && data.length > 0) {
+                            $.each(data, function(idx, batchName) {
+                                placementBatchSelect.append(`<option value="${batchName}">${batchName}</option>`);
+                            });
+                        }
+                        placementBatchSelect.prop('disabled', false);
+                    },
+                    error: function() {
+                        placementBatchSelect.html('<option value="">Error loading batches</option>');
+                        placementBatchSelect.prop('disabled', false);
+                    }
+                });
+            });
+            
+            // Initialize batches dropdown on page load
+            placementBatchType.trigger('change');
+            
+            // Fetch Placement data from Sheets
+            placementSearchBtn.click(function() {
+                loadPlacementData();
+            });
+            
+            function loadPlacementData() {
+                const status = placementBatchType.val();
+                const batch = placementBatchSelect.val() || '';
+                
+                placementSkeleton.removeClass('d-none');
+                placementTableContainer.addClass('d-none');
+                placementNoResults.addClass('d-none');
+                placementResultsBody.empty();
+                
+                // Disable filter selects while loading
+                filterQual.prop('disabled', true).html('<option value="">All Qualifications</option>');
+                filterBranch.prop('disabled', true).html('<option value="">All Branches</option>');
+                filterYear.prop('disabled', true).html('<option value="">All Years</option>');
+                filterPct.prop('disabled', true);
+                
+                $.ajax({
+                    url: '/api/placements/filter',
+                    type: 'GET',
+                    data: { status: status, batch: batch },
+                    success: function(data) {
+                        placementSkeleton.addClass('d-none');
+                        
+                        if (data && data.students) {
+                            allPlacements = data.students;
+                            
+                            // Populate Qualification dropdown
+                            if (data.qualifications && data.qualifications.length > 0) {
+                                $.each(data.qualifications, function(idx, val) {
+                                    filterQual.append(`<option value="${val}">${val}</option>`);
+                                });
+                                filterQual.prop('disabled', false);
+                            }
+                            
+                            // Populate Branch dropdown
+                            if (data.streams && data.streams.length > 0) {
+                                $.each(data.streams, function(idx, val) {
+                                    filterBranch.append(`<option value="${val}">${val}</option>`);
+                                });
+                                filterBranch.prop('disabled', false);
+                            }
+                            
+                            // Populate Passed Out Year dropdown
+                            if (data.years && data.years.length > 0) {
+                                $.each(data.years, function(idx, val) {
+                                    filterYear.append(`<option value="${val}">${val}</option>`);
+                                });
+                                filterYear.prop('disabled', false);
+                            }
+                            
+                            filterPct.prop('disabled', false);
+                            
+                            // Apply filters and render
+                            applyLocalFilters();
+                        } else {
+                            allPlacements = [];
+                            placementCount.text('0');
+                            placementNoResults.removeClass('d-none');
+                        }
+                    },
+                    error: function() {
+                        placementSkeleton.addClass('d-none');
+                        placementCount.text('0');
+                        alert('Error fetching student placement data. Please try again.');
+                    }
+                });
+            }
+            
+            // Helper to parse percentages
+            function parsePercent(val) {
+                if (!val) return 0;
+                let parsed = parseFloat(val.toString().replace(/[^0-9.]/g, ''));
+                return isNaN(parsed) ? 0 : parsed;
+            }
+            
+            // Apply Filters Locally
+            function applyLocalFilters() {
+                const qVal = filterQual.val().toLowerCase();
+                const bVal = filterBranch.val().toLowerCase();
+                const yVal = filterYear.val();
+                const pVal = parseFloat(filterPct.val()) || 0;
+                
+                placementResultsBody.empty();
+                
+                let filtered = allPlacements.filter(function(s) {
+                    // Qualification check
+                    if (qVal) {
+                        const ugQ = (s.ugQualification || '').toLowerCase();
+                        const pgQ = (s.pgQualification || '').toLowerCase();
+                        if (ugQ.indexOf(qVal) === -1 && pgQ.indexOf(qVal) === -1) {
+                            return false;
+                        }
+                    }
+                    // Branch check
+                    if (bVal) {
+                        const ugStr = (s.ugStream || '').toLowerCase();
+                        if (ugStr.indexOf(bVal) === -1) {
+                            return false;
+                        }
+                    }
+                    // Year check
+                    if (yVal) {
+                        if (s.ugPassedOutYear !== yVal && s.pgPassedOutYear !== yVal) {
+                            return false;
+                        }
+                    }
+                    // Percentage check
+                    if (pVal) {
+                        const ugPct = parsePercent(s.ugPercentage);
+                        const pgPct = parsePercent(s.pgPercentage);
+                        if (ugPct < pVal && pgPct < pVal) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+                
+                placementCount.text(filtered.length);
+                
+                if (filtered.length > 0) {
+                    $.each(filtered, function(index, s) {
+                        const ugQual = s.ugQualification || '-';
+                        const ugStream = s.ugStream || '-';
+                        const ugYear = s.ugPassedOutYear || '-';
+                        const ugPct = s.ugPercentage ? s.ugPercentage + '%' : '-';
+                        const pgPct = s.pgPercentage ? s.pgPercentage + '%' : '-';
+                        const displayPct = s.pgPercentage ? `UG: ${ugPct} / PG: ${pgPct}` : ugPct;
+                        const mobile = s.mobile || '-';
+                        
+                        const row = $(`
+                            <tr style="cursor: pointer;">
+                                <td><span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1">${s.batchNo}</span></td>
+                                <td class="fw-bold">${s.rollNo}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="p-1 bg-light rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">
+                                            <i class="lucide-user text-muted" style="width: 14px; height: 14px;"></i>
+                                        </div>
+                                        <span>${s.name}</span>
+                                    </div>
+                                </td>
+                                <td>${ugQual}</td>
+                                <td>${ugStream}</td>
+                                <td>${ugYear}</td>
+                                <td class="fw-bold text-success">${displayPct}</td>
+                                <td>${mobile}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-primary fw-medium view-details-btn">
+                                        Details
+                                    </button>
+                                </td>
+                            </tr>
+                        `);
+                        
+                        // Click handlers
+                        row.find('.view-details-btn').click(function(e) {
+                            e.stopPropagation();
+                            showPlacementModal(s);
+                        });
+                        row.click(function() {
+                            showPlacementModal(s);
+                        });
+                        
+                        placementResultsBody.append(row);
+                    });
+                    
+                    placementTableContainer.removeClass('d-none');
+                    placementNoResults.addClass('d-none');
+                    
+                    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                        lucide.createIcons();
+                    }
+                } else {
+                    placementTableContainer.addClass('d-none');
+                    placementNoResults.removeClass('d-none');
+                }
+            }
+            
+            // Bind Filter Change handlers
+            filterQual.change(applyLocalFilters);
+            filterBranch.change(applyLocalFilters);
+            filterYear.change(applyLocalFilters);
+            filterPct.change(applyLocalFilters);
+            
+            // Modal Display
+            function showPlacementModal(s) {
+                $('#detailPhoto').attr('src', s.photoURL || '');
+                $('#detailName').text(s.name || '');
+                $('#detailRollNo').text(s.rollNo || '');
+                $('#detailBatch').text('Batch: ' + (s.batchNo || ''));
+                
+                $('#detailMobile').text(s.mobile || '-');
+                $('#detailAltMobile').text(s.alternateMobile || '-');
+                $('#detailEmail').text(s.email || '-');
+                $('#detailMode').text(s.modeOfTraining || '-');
+                
+                $('#detailUgQual').text(s.ugQualification || '-');
+                $('#detailUgStream').text(s.ugStream || '-');
+                $('#detailUgYear').text(s.ugPassedOutYear || '-');
+                $('#detailUgPct').text(s.ugPercentage ? s.ugPercentage + '%' : '-');
+                
+                $('#detailPgQual').text(s.pgQualification || '-');
+                $('#detailPgYear').text(s.pgPassedOutYear || '-');
+                $('#detailPgPct').text(s.pgPercentage ? s.pgPercentage + '%' : '-');
+                
+                $('#detailUniversity').text(s.universityName || '-');
+                $('#detailCollege').text(s.collegeName || '-');
+                
+                $('#detailWorkExp').text(s.workExperience || 'No experience info');
+                $('#detailPrevJob').text(s.previousJob || '-');
+                $('#detailPrevRole').text(s.previousJobRole || '-');
+                $('#detailPrevCompany').text(s.previousCompanyName || '-');
+                
+                // Show modal
+                $('#placementDetailsModal').modal('show');
+            }
+        });
+    </script>
+</body>
+</html>
