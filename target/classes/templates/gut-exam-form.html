@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head_fragment('GUT-Exam Marks Entry – Vcube Admin')}"></th:block>
+</head>
+<body class="bg-body">
+    <!-- loading layer -->
+    <style>
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--glass-bg); backdrop-filter: blur(5px); z-index: 9999; display: none; align-items: center; justify-content: center; }
+        .loading-overlay.show { display: flex !important; }
+        /* Custom styles for gut sheet inputs */
+        .gut-input {
+            border-color: rgba(220, 53, 69, 0.4) !important;
+            transition: all 0.2s ease;
+        }
+        .gut-input:focus {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25) !important;
+            background-color: transparent !important;
+        }
+    </style>
+    <div id="loader" class="loading-overlay">
+        <div class="vcube-image-loader">
+			<img th:src="@{/images/vcube-round-logo.png}" alt="Loading...">
+		</div>
+    </div>
+
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <th:block th:replace="~{fragments/sidebar :: sidebar_fragment}"></th:block>
+        
+        <!-- Main Content Area -->
+        <div id="content">
+            <!-- Header -->
+            <th:block th:replace="~{fragments/header :: header_fragment('GUT-Exam Marks Entry')}"></th:block>
+
+            <div class="container-fluid p-4 page-enter">
+                <div class="row pt-2 pl-2 mb-3">
+                    <div class="col-12">
+                         <a th:href="@{/dashboard}" class="btn btn-outline-secondary rounded-pill fw-medium btn-sm">
+                            <i class="lucide-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card glass-card border-0 shadow-sm mb-4">
+                    <div class="card-header border-0 py-4 d-flex align-items-center" style="background: linear-gradient(135deg, rgba(220, 53, 69, 0.15), rgba(186, 40, 54, 0.08));">
+                        <div class="p-2 bg-danger bg-opacity-10 rounded-circle me-3">
+                            <i class="lucide-file-text text-danger fa-2x d-block" style="line-height:1; color: #dc3545 !important;"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-0 fw-bold text-danger" style="color: #dc3545 !important;">Student Filter & Live GUT-Exam Entry</h4>
+                            <p class="mb-0 text-muted small">Select batch and date to view and update student GUT-Exam scores</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body p-4">
+                        <!-- Search + Batch filter form -->
+                        <form class="row g-3 mb-4" th:action="@{/gut-exam}" method="get" onsubmit="showLoading()">
+                            
+                            <!-- Date Selection -->
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Exam Date</label>
+                                <input type="date" class="form-control shadow-sm border-danger gut-input" name="date" 
+                                    th:value="${selectedDate}" required id="gutDate">
+                            </div>
+
+                            <!-- Batch dropdown -->
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Batch</label> 
+                                <select class="form-select shadow-sm border-danger gut-input text-body" name="batch" required>
+                                    <option value="" disabled th:selected="${selectedBatch == null}">Select batch...</option>
+                                    <option th:each="b : ${batches}" th:value="${b}" th:text="${b}"
+                                        th:selected="${b == selectedBatch}"></option>
+                                </select>
+                            </div>
+
+                            <!-- Client-Side Keyword search -->
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Search</label> 
+                                <div class="input-group shadow-sm">
+                                    <span class="input-group-text bg-transparent border-end-0 border-danger"><i class="lucide-search text-danger" style="width:16px;"></i></span>
+                                    <input type="text" id="keywordSearchInput" class="form-control border-start-0 ps-0 text-body bg-transparent border-danger gut-input"
+                                        placeholder="Name, email, roll..." th:disabled="${selectedBatch == null}">
+                                </div>
+                            </div>
+
+                            <!-- Roll numbers filter input -->
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Filter by Rolls (comma separated)</label> 
+                                <div class="input-group shadow-sm">
+                                    <span class="input-group-text bg-transparent border-end-0 border-danger"><i class="lucide-hash text-danger" style="width:16px;"></i></span>
+                                    <input type="text" id="rollFilterInput" class="form-control border-start-0 border-danger bg-transparent gut-input"
+                                        placeholder="e.g. 10, 23, 44" th:disabled="${selectedBatch == null}">
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="col-md-2 d-flex align-items-end justify-content-start">
+                                <button type="submit" class="btn btn-danger text-white px-4 fw-bold shadow-sm rounded-pill w-100" style="background-color: #dc3545; border-color: #dc3545;">
+                                    <i class="lucide-search me-2"></i>Load List
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Alerts -->
+                        <div th:if="${message != null}" class="alert alert-dismissible fade show border-0 border-start border-4 mb-4 shadow-sm"
+                             th:classappend="${success} ? 'alert-success border-success' : 'alert-danger border-danger'" role="alert">
+                             <div class="d-flex align-items-center">
+                                 <i class="me-2 fa-lg" th:classappend="${success} ? 'lucide-check-circle text-success' : 'lucide-alert-circle text-danger'"></i>
+                                 <span class="fw-medium text-body" th:text="${message}"></span>
+                             </div>
+                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+
+                        <!-- Students table + marks entry form -->
+                        <form th:action="@{/gut-exam/submit}" method="post" th:if="${selectedBatch != null}" id="marksForm">
+                            
+                            <!-- Bulk entry section -->
+                            <div class="row g-3 mb-4 p-4 bg-danger bg-opacity-5 rounded-3 border border-danger border-opacity-10 shadow-sm">
+                                <div class="col-12 col-lg-8">
+                                    <label class="form-label fw-bold small text-muted text-uppercase">Bulk Rolls & Marks Entry (comma separated)</label> 
+                                    <div class="input-group shadow-sm">
+                                        <span class="input-group-text bg-transparent border-end-0 border-danger"><i class="lucide-hash text-danger" style="width:16px;"></i></span>
+                                        <input type="text" id="bulkRollInput" class="form-control border-start-0 ps-0 text-body bg-transparent border-end-0 border-danger gut-input"
+                                            placeholder="e.g. 10=35, 23=25.5, 44=30">
+                                        <button type="button" class="btn btn-danger text-white border border-danger fw-bold" id="applyBulkBtn">
+                                            <i class="lucide-check-circle me-1" style="width:16px;"></i>Apply
+                                        </button>
+                                    </div>
+                                    <div id="liveBulkStats" class="mt-2 d-flex flex-wrap gap-2 align-items-center" style="min-height: 24px;">
+                                        <span class="text-muted small"><i class="lucide-info me-1" style="width:12px;"></i>Enter roll numbers and marks to see live validation</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold text-muted mb-0">Filtered Results <span class="badge bg-secondary ms-2" id="filteredCountBadge" th:text="${#lists.size(students)}">0</span></h6>
+                            </div>
+
+                            <div class="table-responsive bg-transparent border rounded-3 shadow-sm mb-4">
+                                <table id="studentsTable" class="table table-hover align-middle mb-0">
+                                    <thead class="table-light text-muted" style="border-bottom: 2px solid var(--border-color);">
+                                        <tr>
+                                            <th class="ps-3 py-3" style="width:50px;">S/No</th>
+                                            <th class="py-3" style="width:180px;">Roll No</th>
+                                            <th class="py-3" style="width:280px;">Name</th>
+                                            <th class="py-3">Contact Info</th>
+                                            <th class="py-3 text-center" style="width:200px;">GUT-Exam Marks (0 - 40)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="border-top-0">
+                                        <tr th:each="s, stat : ${students}" class="student-row">
+                                            <td class="ps-3 text-muted fw-bold" th:text="${stat.index + 1}"></td>
+                                            <td>
+                                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger fw-bold px-2 py-1 student-roll-badge" style="color: #dc3545 !important; border-color: #dc3545 !important;">
+                                                    <i class="lucide-hash me-1" style="width:10px;"></i><span class="student-roll-text" th:text="${s.rollNo}"></span>
+                                                </span>
+                                                <input type="hidden" name="studentRollNos" th:value="${s.rollNo}">
+                                            </td>
+                                            <td class="fw-medium text-body student-name-text" th:text="${s.name}"></td>
+                                            <td class="student-contact-text">
+                                                <div class="d-flex flex-column text-muted small">
+                                                    <span><i class="lucide-phone me-1" style="width:10px;"></i> <span th:text="${s.mobile}"></span></span>
+                                                    <span><i class="lucide-mail me-1" style="width:10px;"></i> <span th:text="${s.email}" class="font-monospace"></span></span>
+                                                </div>
+                                            </td>
+                                            <td class="d-flex justify-content-center">
+                                                <input type="number" class="form-control shadow-sm border-danger gut-input bg-transparent text-center" 
+                                                       style="color:var(--text-main); max-width: 120px;"
+                                                       name="gutMarks" th:value="${s.mark}" step="0.5" min="0" max="40" placeholder="0-40">
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(students)}">
+                                            <td colspan="5" class="text-center py-5 text-muted">
+                                                <i class="lucide-users fa-3x mb-3 opacity-50 d-block mx-auto"></i>
+                                                <h5>No active, online, or add-on students found in batch</h5>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Hidden filters to keep context -->
+                            <input type="hidden" name="batch" th:value="${selectedBatch}">
+                            <input type="hidden" name="date" th:value="${selectedDate}">
+
+                            <div class="d-flex justify-content-end" th:if="${not #lists.isEmpty(students)}">
+                                <button type="submit" class="btn btn-danger text-white px-5 py-2 fw-bold shadow-sm rounded-pill btn-lg w-100 w-md-auto" style="background-color: #dc3545; border-color: #dc3545;">
+                                    <i class="lucide-save me-2"></i>Save GUT-Exam Marks
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <!-- Empty State before filtering -->
+                        <div th:unless="${selectedBatch != null}" class="text-center py-5 text-muted">
+                            <i class="lucide-users fa-3x mb-3 opacity-25 d-block mx-auto"></i>
+                            <h5>Please select a Batch and Date to begin entry</h5>
+                            <p class="small text-muted">A list of active, online, and add-on students will load here for side-by-side marks input.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Scripts Fragment -->
+    <th:block th:replace="~{fragments/scripts :: scripts_fragment}"></th:block>
+    
+    <script th:inline="javascript">
+        function showLoading() {
+            document.getElementById('loader').classList.add('show');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInput = document.getElementById('gutDate');
+            
+            // Set max date to today
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.setAttribute('max', today);
+            
+            // Default to today if empty
+            if (!dateInput.value) {
+                dateInput.value = today;
+            }
+
+            // --- Client-side filtering logic ---
+            const selectedBatch = /*[[${selectedBatch}]]*/ null;
+            if (!selectedBatch) return;
+
+            const rollFilterInput = document.getElementById('rollFilterInput');
+            const keywordSearchInput = document.getElementById('keywordSearchInput');
+            const filteredCountBadge = document.getElementById('filteredCountBadge');
+            const rows = document.querySelectorAll('.student-row');
+
+            // 1. Helper function to extract short roll number
+            const extractShortRollNo = (fullRoll, batch) => {
+                if (!fullRoll) return "";
+                let trimmed = fullRoll.trim();
+                if (!trimmed.includes("JFS-B")) return trimmed;
+                
+                let rollNos = trimmed.split("-");
+                let rollNo = "";
+                const batchMatch = batch && rollNos.length > 1 && rollNos[1].toUpperCase() === batch.toUpperCase();
+                
+                if (rollNos.length === 3) {
+                    if (batchMatch) {
+                        rollNo = rollNos[2].replace(/^0+(?!$)/, "").trim();
+                    } else {
+                        rollNo = rollNos[1].substring(1).trim() + "-" + rollNos[rollNos.length - 1].replace(/^0+(?!$)/, "").trim();
+                    }
+                } else if (rollNos.length > 3 && batchMatch) {
+                    rollNo = rollNos[2].substring(1).trim() + "-" + rollNos[rollNos.length - 1].replace(/^0+(?!$)/, "").trim();
+                } else {
+                    return trimmed;
+                }
+                
+                return rollNo.replace(/^0+(?!$)/, "").trim();
+            };
+
+            // 2. Filter logic function
+            function applyFilters() {
+                const keyword = keywordSearchInput ? keywordSearchInput.value.toLowerCase().trim() : '';
+                const filterVal = rollFilterInput ? rollFilterInput.value.trim() : '';
+                
+                // Parse the comma-separated roll numbers input
+                const filterRolls = filterVal ? filterVal.split(',')
+                    .map(r => r.trim().replace(/^0+(?!$)/, ""))
+                    .filter(r => r !== '') : [];
+
+                let visibleCount = 0;
+                rows.forEach(row => {
+                    const rollBadge = row.querySelector('.student-roll-text');
+                    const nameCell = row.querySelector('.student-name-text');
+                    const contactCell = row.querySelector('.student-contact-text');
+                    
+                    let rollMatch = true;
+                    let keywordMatch = true;
+
+                    const fullRoll = rollBadge ? rollBadge.textContent.trim() : '';
+                    const shortRoll = extractShortRollNo(fullRoll, selectedBatch);
+
+                    if (filterRolls.length > 0) {
+                        rollMatch = filterRolls.includes(shortRoll);
+                    }
+
+                    if (keyword) {
+                        const nameText = nameCell ? nameCell.textContent.toLowerCase() : '';
+                        const contactText = contactCell ? contactCell.textContent.toLowerCase() : '';
+                        const rollText = fullRoll.toLowerCase();
+                        keywordMatch = nameText.includes(keyword) || contactText.includes(keyword) || rollText.includes(keyword);
+                    }
+
+                    if (rollMatch && keywordMatch) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                if (filteredCountBadge) {
+                    filteredCountBadge.textContent = visibleCount;
+                }
+            }
+
+            if (rollFilterInput) rollFilterInput.addEventListener('input', applyFilters);
+            if (keywordSearchInput) keywordSearchInput.addEventListener('input', applyFilters);
+
+            // --- Bulk rolls & marks entry validation ---
+            const bulkRollInput = document.getElementById('bulkRollInput');
+            const liveBulkStats = document.getElementById('liveBulkStats');
+            const applyBulkBtn = document.getElementById('applyBulkBtn');
+
+            const getTableRolls = () => {
+                const rolls = [];
+                document.querySelectorAll('#studentsTable tbody tr').forEach(tr => {
+                    const rollSpan = tr.querySelector('.student-roll-text');
+                    if (rollSpan) rolls.push(rollSpan.textContent.trim());
+                });
+                return rolls;
+            };
+
+            const updateBulkStats = () => {
+                if (!bulkRollInput || !liveBulkStats) return;
+                const value = bulkRollInput.value.trim();
+                if (!value) {
+                    liveBulkStats.innerHTML = '<span class="text-muted small"><i class="lucide-info me-1" style="width:12px;"></i>Enter roll numbers and marks to see live validation</span>';
+                    if(typeof lucide !== 'undefined') lucide.createIcons();
+                    return;
+                }
+
+                const tableRolls = getTableRolls().map(r => extractShortRollNo(r, selectedBatch));
+                const pairs = value.split(',').map(p => p.trim()).filter(p => p !== '');
+                
+                const rollSet = new Set();
+                const duplicateRollsSet = new Set();
+                const validPairs = [];
+                const invalidPairs = [];
+
+                pairs.forEach(pair => {
+                    const parts = pair.split('=');
+                    const roll = parts[0].trim();
+                    const markStr = parts.length > 1 ? parts[1].trim() : '';
+
+                    if (roll === '') return;
+
+                    const shortRoll = roll.replace(/^0+(?!$)/, "");
+                    const isRollValid = tableRolls.includes(shortRoll);
+                    const markVal = parseFloat(markStr);
+                    const isMarkValid = parts.length > 1 && !isNaN(markVal) && markVal >= 0 && markVal <= 40;
+
+                    if (rollSet.has(shortRoll)) {
+                        duplicateRollsSet.add(shortRoll);
+                    } else {
+                        rollSet.add(shortRoll);
+                    }
+
+                    if (isRollValid && isMarkValid) {
+                        validPairs.push({ roll: shortRoll, mark: markStr });
+                    } else {
+                        invalidPairs.push(pair);
+                    }
+                });
+
+                let html = `
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle">
+                        <i class="lucide-check me-1" style="width:12px;"></i>Valid: ${validPairs.length}
+                    </span>
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle">
+                        <i class="lucide-hash me-1" style="width:12px;"></i>Total Input: ${rollSet.size}
+                    </span>
+                `;
+
+                if (invalidPairs.length > 0) {
+                    html += `
+                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle ms-1">
+                            <i class="lucide-alert-circle me-1" style="width:12px;"></i>Invalid/Format: ${invalidPairs.length}
+                        </span>
+                        <div class="w-100 mt-1">
+                            <small class="text-danger fw-bold">Invalid Format/Roll: </small>
+                            <small class="text-danger">${invalidPairs.join(', ')}</small>
+                        </div>
+                    `;
+                }
+
+                if (duplicateRollsSet.size > 0) {
+                    html += `
+                        <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning-subtle ms-1">
+                            <i class="lucide-alert-triangle me-1" style="width:12px;"></i>Duplicates: ${duplicateRollsSet.size}
+                        </span>
+                        <div class="w-100 mt-1">
+                            <small class="text-warning-emphasis fw-bold">Duplicate Inputs: </small>
+                            <small class="text-warning-emphasis">${[...duplicateRollsSet].join(', ')}</small>
+                        </div>
+                    `;
+                }
+
+                liveBulkStats.innerHTML = html;
+                if(typeof lucide !== 'undefined') lucide.createIcons();
+            };
+
+            const applyBulkMarks = () => {
+                if (!bulkRollInput) return 0;
+                const value = bulkRollInput.value.trim();
+                if (!value) return 0;
+
+                const pairs = value.split(',').map(p => p.trim()).filter(p => p !== '');
+                let appliedCount = 0;
+
+                pairs.forEach(pair => {
+                    const parts = pair.split('=');
+                    if (parts.length === 2) {
+                        const roll = parts[0].trim().replace(/^0+(?!$)/, "");
+                        const mark = parts[1].trim();
+                        
+                        const rows = document.querySelectorAll('.student-row');
+                        rows.forEach(row => {
+                            const rollBadge = row.querySelector('.student-roll-text');
+                            if (rollBadge) {
+                                const fullRoll = rollBadge.textContent.trim();
+                                const sRoll = extractShortRollNo(fullRoll, selectedBatch);
+                                if (sRoll === roll) {
+                                    const markInput = row.querySelector('input[name="gutMarks"]');
+                                    if (markInput) {
+                                        markInput.value = mark;
+                                        appliedCount++;
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+                return appliedCount;
+            };
+
+            if (bulkRollInput) {
+                bulkRollInput.addEventListener('input', updateBulkStats);
+                updateBulkStats();
+            }
+
+            if (applyBulkBtn) {
+                applyBulkBtn.addEventListener('click', function() {
+                    const count = applyBulkMarks();
+                    if (count > 0) {
+                        alert(`Applied marks to ${count} students locally. Please review and click Save to submit.`);
+                    } else {
+                        alert("No valid marks to apply. Please verify input format: RollNo=Mark (e.g. 10=35)");
+                    }
+                });
+            }
+
+            const marksForm = document.getElementById('marksForm');
+            if (marksForm) {
+                marksForm.addEventListener('submit', function(e) {
+                    applyBulkMarks();
+                    showLoading();
+                });
+            }
+        });
+    </script>
+</body>
+</html>

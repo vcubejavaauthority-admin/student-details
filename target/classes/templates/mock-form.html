@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head_fragment('Mock Marks Entry – Vcube Admin')}"></th:block>
+</head>
+<body class="bg-body">
+    <!-- loading layer -->
+    <style>
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--glass-bg); backdrop-filter: blur(5px); z-index: 9999; display: none; align-items: center; justify-content: center; }
+        .loading-overlay.show { display: flex !important; }
+        /* Custom styles for mock sheet inputs */
+        .mock-input {
+            border-color: rgba(255, 193, 7, 0.4) !important;
+            transition: all 0.2s ease;
+        }
+        .mock-input:focus {
+            border-color: #ffc107 !important;
+            box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25) !important;
+            background-color: transparent !important;
+        }
+    </style>
+    <div id="loader" class="loading-overlay">
+        <div class="vcube-image-loader">
+			<img th:src="@{/images/vcube-round-logo.png}" alt="Loading...">
+		</div>
+    </div>
+
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <th:block th:replace="~{fragments/sidebar :: sidebar_fragment}"></th:block>
+        
+        <!-- Main Content Area -->
+        <div id="content">
+            <!-- Header -->
+            <th:block th:replace="~{fragments/header :: header_fragment('Mock Marks Entry')}"></th:block>
+
+            <div class="container-fluid p-4 page-enter">
+                <div class="row pt-2 pl-2 mb-3">
+                    <div class="col-12">
+                         <a th:href="@{/dashboard}" class="btn btn-outline-secondary rounded-pill fw-medium btn-sm">
+                            <i class="lucide-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card glass-card border-0 shadow-sm mb-4">
+                    <div class="card-header border-0 py-4 d-flex align-items-center" style="background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(253, 126, 20, 0.08));">
+                        <div class="p-2 bg-warning bg-opacity-10 rounded-circle me-3">
+                            <i class="lucide-pen-tool text-warning fa-2x d-block" style="line-height:1; color: #ffc107 !important;"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-0 fw-bold text-warning" style="color: #ffb300 !important;">Student Filter & Live Mock Entry</h4>
+                            <p class="mb-0 text-muted small">Select batch and date to view and update student mock assessments</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body p-4">
+                        <!-- Search + Batch filter form -->
+                        <form class="row g-3 mb-4" th:action="@{/mock}" method="get" onsubmit="showLoading()">
+                            
+                            <!-- Date Selection -->
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Mock Date</label>
+                                <input type="date" class="form-control shadow-sm border-warning mock-input" name="date" 
+                                    th:value="${selectedDate}" required id="mockDate">
+                            </div>
+
+                            <!-- Batch dropdown -->
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Batch</label> 
+                                <select class="form-select shadow-sm border-warning mock-input text-body" name="batch" required>
+                                    <option value="" disabled th:selected="${selectedBatch == null}">Select batch...</option>
+                                    <option th:each="b : ${batches}" th:value="${b}" th:text="${b}"
+                                        th:selected="${b == selectedBatch}"></option>
+                                </select>
+                            </div>
+
+                            <!-- Roll numbers filter input -->
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Filter by Rolls</label> 
+                                <div class="input-group shadow-sm">
+                                    <span class="input-group-text bg-transparent border-end-0 border-warning"><i class="lucide-hash text-warning" style="width:16px;"></i></span>
+                                    <input type="text" id="rollFilterInput" class="form-control border-start-0 border-warning bg-transparent mock-input"
+                                        placeholder="e.g. 10, 23" th:disabled="${selectedBatch == null}">
+                                </div>
+                            </div>
+
+                            <!-- Name, Mobile, Email filter input -->
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Filter by Name/Mobile/Email</label>
+                                <div class="input-group shadow-sm">
+                                    <span class="input-group-text bg-transparent border-end-0 border-warning"><i class="lucide-search text-warning" style="width:16px;"></i></span>
+                                    <input type="text" id="generalFilterInput" class="form-control border-start-0 border-warning bg-transparent mock-input"
+                                        placeholder="Name, mobile or email..." th:disabled="${selectedBatch == null}">
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="col-md-2 d-flex align-items-end justify-content-start">
+                                <button type="submit" class="btn btn-warning px-3 fw-bold shadow-sm rounded-pill text-dark me-2" style="background-color: #ffc107; border-color: #ffc107;">
+                                    <i class="lucide-search me-1"></i>Load
+                                </button>
+                                <button type="button" class="btn btn-outline-warning px-3 fw-bold shadow-sm rounded-pill text-warning" style="border-color: #ffc107;" 
+                                        data-bs-toggle="modal" data-bs-target="#remarksModal" th:disabled="${selectedBatch == null}">
+                                    <i class="lucide-settings me-1"></i>Remarks
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Alerts -->
+                        <div th:if="${message != null}" class="alert alert-dismissible fade show border-0 border-start border-4 mb-4 shadow-sm"
+                             th:classappend="${success} ? 'alert-success border-success' : 'alert-danger border-danger'" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="me-2 fa-lg" th:classappend="${success} ? 'lucide-check-circle text-success' : 'lucide-alert-circle text-danger'"></i>
+                                <span class="fw-medium text-body" th:text="${message}"></span>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+
+                        <!-- Students table + mock marks form -->
+                        <form th:action="@{/mock/submit}" method="post" onsubmit="showLoading()" th:if="${selectedBatch != null}">
+                            
+                            <!-- Remarks defined pills list -->
+                            <div class="mb-4 d-flex flex-wrap gap-2 align-items-center bg-warning bg-opacity-5 p-3 rounded-3 border border-warning border-opacity-10 shadow-sm" id="remarksPillsContainer">
+                                <span class="text-muted small fw-bold text-uppercase me-2"><i class="lucide-tag text-warning me-1"></i>Active Remarks:</span>
+                                <!-- Badge pills will be generated by JS -->
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold text-muted mb-0">Filtered Results <span class="badge bg-secondary ms-2" id="filteredCountBadge" th:text="${#lists.size(students)}">0</span></h6>
+                            </div>
+
+                            <div class="table-responsive bg-transparent border rounded-3 shadow-sm mb-4">
+                                <table id="studentsTable" class="table table-hover align-middle mb-0">
+                                    <thead class="table-light text-muted" style="border-bottom: 2px solid var(--border-color);">
+                                        <tr>
+                                            <th class="ps-3 py-3" style="width:50px;">S/No</th>
+                                            <th class="py-3" style="width:150px;">Roll No</th>
+                                            <th class="py-3" style="width:250px;">Name</th>
+                                            <th class="py-3" style="width:140px;">Technical (0 - 5)</th>
+                                            <th class="py-3" style="width:140px;">Communication (0 - 5)</th>
+                                            <th class="py-3">Remarks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="border-top-0">
+                                        <tr th:each="s, stat : ${students}" class="student-row"
+                                            th:data-name="${s.name}"
+                                            th:data-mobile="${s.mobile != null ? s.mobile : ''}"
+                                            th:data-email="${s.email != null ? s.email : ''}">
+                                            <td class="ps-3 text-muted fw-bold" th:text="${stat.index + 1}"></td>
+                                            <td>
+                                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning fw-bold px-2 py-1 student-roll-badge" style="color: #ff9f00 !important; border-color: #ff9f00 !important;">
+                                                    <i class="lucide-hash me-1" style="width:10px;"></i><span class="student-roll-text" th:text="${s.rollNo}"></span>
+                                                </span>
+                                                <input type="hidden" name="studentRollNos" th:value="${s.rollNo}">
+                                            </td>
+                                            <td class="fw-medium text-body" th:text="${s.name}"></td>
+                                            <td>
+                                                <input type="number" class="form-control shadow-sm border-warning mock-input bg-transparent" 
+                                                       style="color:var(--text-main); max-width: 100px;"
+                                                       name="technicalMarks" th:value="${s.technical}" step="0.5" min="0" max="5" placeholder="0-5">
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control shadow-sm border-warning mock-input bg-transparent" 
+                                                       style="color:var(--text-main); max-width: 100px;"
+                                                       name="communicationMarks" th:value="${s.communication}" step="0.5" min="0" max="5" placeholder="0-5">
+                                            </td>
+                                            <td>
+                                                <select name="remarks" class="form-select shadow-sm border-warning mock-input bg-transparent text-body student-remarks-select" 
+                                                        style="color:var(--text-main);" th:data-pre-val="${s.remarks}">
+                                                    <option value="">Select remark...</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(students)}">
+                                            <td colspan="6" class="text-center py-5 text-muted">
+                                                <i class="lucide-users fa-3x mb-3 opacity-50 d-block mx-auto"></i>
+                                                <h5>No students found in batch</h5>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Hidden filters to keep context -->
+                            <input type="hidden" name="batch" th:value="${selectedBatch}">
+                            <input type="hidden" name="date" th:value="${selectedDate}">
+
+                            <div class="d-flex justify-content-end" th:if="${not #lists.isEmpty(students)}">
+                                <button type="submit" class="btn btn-warning px-5 py-2 fw-bold shadow-sm rounded-pill btn-lg w-100 w-md-auto text-dark" style="background-color: #ffc107; border-color: #ffc107;">
+                                    <i class="lucide-save me-2"></i>Save Mock Marks
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <!-- Empty State before filtering -->
+                        <div th:unless="${selectedBatch != null}" class="text-center py-5 text-muted">
+                            <i class="lucide-users fa-3x mb-3 opacity-25 d-block mx-auto"></i>
+                            <h5>Please select a Batch and Date to begin entry</h5>
+                            <p class="small text-muted">A list of all students will load here for side-by-side marks input.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remarks Modal -->
+    <div class="modal fade" id="remarksModal" tabindex="-1" aria-labelledby="remarksModalLabel" aria-hidden="true" th:if="${selectedBatch != null}">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-card border-warning" style="border: 1px solid rgba(255, 193, 7, 0.4); background-color: var(--card-bg);">
+                <div class="modal-header border-0 py-3" style="background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(253, 126, 20, 0.08)); border-bottom: 1px solid var(--border-color) !important;">
+                    <h5 class="modal-title fw-bold text-warning" id="remarksModalLabel" style="color: #ffb300 !important;">Manage Remarks Options</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Current Options</label>
+                        <div id="remarksOptionsList" class="d-flex flex-column gap-2 mb-3" style="max-height: 250px; overflow-y: auto; padding-right: 5px;">
+                            <!-- List of options will be rendered here with delete buttons -->
+                        </div>
+                    </div>
+                    <div class="border-top pt-3" style="border-top: 1px solid var(--border-color) !important;">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Add New Option</label>
+                        <div class="input-group shadow-sm">
+                            <input type="text" id="newRemarkInput" class="form-control border-warning mock-input bg-transparent text-body" placeholder="e.g. Needs improvement in coding...">
+                            <button class="btn btn-warning text-dark fw-bold" type="button" id="addRemarkBtn" style="background-color: #ffc107; border-color: #ffc107;">
+                                <i class="lucide-plus"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Scripts Fragment -->
+    <th:block th:replace="~{fragments/scripts :: scripts_fragment}"></th:block>
+    
+    <script th:inline="javascript">
+        function showLoading() {
+            document.getElementById('loader').classList.add('show');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInput = document.getElementById('mockDate');
+            
+            // Set max date to today
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.setAttribute('max', today);
+            
+            // Default to today if empty
+            if (!dateInput.value) {
+                dateInput.value = today;
+            }
+
+            // --- Roll Filtering & Remarks dropdown logic ---
+            const selectedBatch = /*[[${selectedBatch}]]*/ null;
+            if (!selectedBatch) return;
+
+            const rollFilterInput = document.getElementById('rollFilterInput');
+            const filteredCountBadge = document.getElementById('filteredCountBadge');
+            const rows = document.querySelectorAll('.student-row');
+
+            // 1. Helper function to extract short roll number
+            const extractShortRollNo = (fullRoll, batch) => {
+                if (!fullRoll) return "";
+                let trimmed = fullRoll.trim();
+                if (!trimmed.includes("JFS-B")) return trimmed;
+                
+                let rollNos = trimmed.split("-");
+                let rollNo = "";
+                const batchMatch = batch && rollNos.length > 1 && rollNos[1].toUpperCase() === batch.toUpperCase();
+                
+                if (rollNos.length === 3) {
+                    if (batchMatch) {
+                        rollNo = rollNos[2].replace(/^0+(?!$)/, "").trim();
+                    } else {
+                        rollNo = rollNos[1].substring(1).trim() + "-" + rollNos[rollNos.length - 1].replace(/^0+(?!$)/, "").trim();
+                    }
+                } else if (rollNos.length > 3 && batchMatch) {
+                    rollNo = rollNos[2].substring(1).trim() + "-" + rollNos[rollNos.length - 1].replace(/^0+(?!$)/, "").trim();
+                } else {
+                    return trimmed;
+                }
+                
+                return rollNo.replace(/^0+(?!$)/, "").trim();
+            };
+
+            // 2. Roll & General Filter Logic
+            const generalFilterInput = document.getElementById('generalFilterInput');
+
+            const applyFilters = () => {
+                const rollVal = rollFilterInput ? rollFilterInput.value.trim() : '';
+                const generalVal = generalFilterInput ? generalFilterInput.value.trim().toLowerCase() : '';
+
+                const filterRolls = rollVal.split(',')
+                    .map(r => r.trim().replace(/^0+(?!$)/, ""))
+                    .filter(r => r !== '');
+
+                let visibleCount = 0;
+                rows.forEach(row => {
+                    let matchesRoll = true;
+                    let matchesGeneral = true;
+
+                    if (filterRolls.length > 0) {
+                        const rollBadge = row.querySelector('.student-roll-text');
+                        if (rollBadge) {
+                            const fullRoll = rollBadge.textContent.trim();
+                            const shortRoll = extractShortRollNo(fullRoll, selectedBatch);
+                            matchesRoll = filterRolls.includes(shortRoll);
+                        } else {
+                            matchesRoll = false;
+                        }
+                    }
+
+                    if (generalVal) {
+                        const name = (row.getAttribute('data-name') || '').toLowerCase();
+                        const mobile = (row.getAttribute('data-mobile') || '').toLowerCase();
+                        const email = (row.getAttribute('data-email') || '').toLowerCase();
+                        matchesGeneral = name.includes(generalVal) || mobile.includes(generalVal) || email.includes(generalVal);
+                    }
+
+                    if (matchesRoll && matchesGeneral) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                filteredCountBadge.textContent = visibleCount;
+            };
+
+            if (rollFilterInput) {
+                rollFilterInput.addEventListener('input', applyFilters);
+            }
+            if (generalFilterInput) {
+                generalFilterInput.addEventListener('input', applyFilters);
+            }
+
+            // 3. Remarks dropdown configuration manager
+            const DEFAULT_REMARKS = [
+                "Need to improve in communication",
+                "Need to improve in technical",
+                "Need to improve in both technical and comunication",
+                "Good",
+                "Excellent"
+            ];
+
+            const getRemarksOptions = () => {
+                const stored = localStorage.getItem('mockRemarksOptions');
+                if (stored) {
+                    try {
+                        return JSON.parse(stored);
+                    } catch (e) {
+                        return DEFAULT_REMARKS;
+                    }
+                }
+                return DEFAULT_REMARKS;
+            };
+
+            const saveRemarksOptions = (options) => {
+                localStorage.setItem('mockRemarksOptions', JSON.stringify(options));
+            };
+
+            // Populate all select elements with options
+            const populateRemarksDropdowns = () => {
+                const options = getRemarksOptions();
+                const selects = document.querySelectorAll('.student-remarks-select');
+
+                selects.forEach(select => {
+                    // Save currently selected value to restore later
+                    const currentVal = select.value || select.getAttribute('data-pre-val') || '';
+
+                    // Clear options except first placeholder
+                    select.innerHTML = '<option value="">Select remark...</option>';
+
+                    // Add current list of options
+                    options.forEach(opt => {
+                        const optElem = document.createElement('option');
+                        optElem.value = opt;
+                        optElem.textContent = opt;
+                        select.appendChild(optElem);
+                    });
+
+                    // If student has a preload or custom remark not in the options list, dynamically append it
+                    if (currentVal && !options.includes(currentVal)) {
+                        const customOpt = document.createElement('option');
+                        customOpt.value = currentVal;
+                        customOpt.textContent = currentVal;
+                        select.appendChild(customOpt);
+                    }
+
+                    // Restore selected value
+                    select.value = currentVal;
+                });
+            };
+
+            // Render pills on sheet head
+            const renderRemarksPills = () => {
+                const options = getRemarksOptions();
+                const container = document.getElementById('remarksPillsContainer');
+                if (!container) return;
+
+                // Keep the label
+                container.innerHTML = '<span class="text-muted small fw-bold text-uppercase me-2"><i class="lucide-tag text-warning me-1"></i>Active Remarks:</span>';
+
+                options.forEach(opt => {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge bg-warning bg-opacity-10 text-warning border border-warning-subtle rounded-pill px-3 py-2 small fw-medium';
+                    badge.style.color = '#ff9f00 !important';
+                    badge.style.borderColor = 'rgba(255,193,7,0.3) !important';
+                    badge.textContent = opt;
+                    container.appendChild(badge);
+                });
+
+                if (options.length === 0) {
+                    container.innerHTML += '<span class="text-muted small italic">No active remarks options defined. Click Remarks to add.</span>';
+                }
+            };
+
+            // Render option list inside modal manager
+            const renderModalOptions = () => {
+                const options = getRemarksOptions();
+                const container = document.getElementById('remarksOptionsList');
+                if (!container) return;
+
+                container.innerHTML = '';
+
+                options.forEach((opt, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'd-flex justify-content-between align-items-center p-2 rounded border border-warning border-opacity-10 bg-warning bg-opacity-5 mb-1';
+                    
+                    const span = document.createElement('span');
+                    span.className = 'small fw-medium text-body';
+                    span.textContent = opt;
+
+                    const delBtn = document.createElement('button');
+                    delBtn.type = 'button';
+                    delBtn.className = 'btn btn-sm btn-outline-danger border-0 rounded-circle';
+                    delBtn.innerHTML = '<i class="lucide-trash-2" style="width: 14px; height: 14px;"></i>';
+                    delBtn.onclick = function() {
+                        const current = getRemarksOptions();
+                        current.splice(idx, 1);
+                        saveRemarksOptions(current);
+                        
+                        // Refresh UI
+                        renderModalOptions();
+                        renderRemarksPills();
+                        populateRemarksDropdowns();
+                        
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    };
+
+                    div.appendChild(span);
+                    div.appendChild(delBtn);
+                    container.appendChild(div);
+                });
+
+                if (options.length === 0) {
+                    container.innerHTML = '<div class="text-center py-3 text-muted small">No custom options. Add one below.</div>';
+                }
+            };
+
+            // Add remark button click handler
+            const addRemarkBtn = document.getElementById('addRemarkBtn');
+            const newRemarkInput = document.getElementById('newRemarkInput');
+
+            if (addRemarkBtn && newRemarkInput) {
+                addRemarkBtn.addEventListener('click', function() {
+                    const text = newRemarkInput.value.trim();
+                    if (!text) return;
+
+                    const current = getRemarksOptions();
+                    if (current.includes(text)) {
+                        alert('This option already exists.');
+                        return;
+                    }
+
+                    current.push(text);
+                    saveRemarksOptions(current);
+                    
+                    newRemarkInput.value = '';
+
+                    // Refresh UI
+                    renderModalOptions();
+                    renderRemarksPills();
+                    populateRemarksDropdowns();
+
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                });
+            }
+
+            // Initialize Remarks logic
+            populateRemarksDropdowns();
+            renderRemarksPills();
+            renderModalOptions();
+        });
+    </script>
+</body>
+</html>

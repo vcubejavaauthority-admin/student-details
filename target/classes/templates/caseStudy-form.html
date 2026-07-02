@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head_fragment('Case-Study Entry – Vcube Admin')}"></th:block>
+</head>
+<body class="bg-body">
+    <style>
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--glass-bg); backdrop-filter: blur(5px); z-index: 9999; display: none; align-items: center; justify-content: center; }
+        .loading-overlay.show { display: flex !important; }
+    </style>
+    <div id="loader" class="loading-overlay">
+        <div class="vcube-image-loader">
+			<img th:src="@{/images/vcube-round-logo.png}" alt="Loading...">
+		</div>
+    </div>
+
+    <div class="wrapper">
+        <th:block th:replace="~{fragments/sidebar :: sidebar_fragment}"></th:block>
+        <div id="content">
+            <th:block th:replace="~{fragments/header :: header_fragment('Case-Study Marks Entry')}"></th:block>
+
+            <div class="container-fluid p-4 page-enter">
+                <div class="row pt-2 pl-2 mb-4">
+                    <div class="col-12">
+                         <a th:href="@{/dashboard}" class="btn btn-outline-secondary rounded-pill fw-medium btn-sm">
+                            <i class="lucide-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-6">
+                        <div class="card glass-card border-0 mb-5 overflow-hidden">
+                            <div class="card-header border-0 py-4 text-center" style="background: linear-gradient(135deg, rgba(13, 202, 240, 0.2), rgba(11, 172, 215, 0.1));">
+                                <div class="p-3 bg-info bg-opacity-25 rounded-circle d-inline-block mb-3">
+                                    <i class="lucide-briefcase text-info fa-3x" style="color: #0dcaf0;"></i>
+                                </div>
+                                <h3 class="mb-0 fw-bold text-info" style="color: #0dcaf0 !important;">Case-Study Marks</h3>
+                                <p class="text-muted mb-0 mt-2">Enter student case-study evaluations by batch.</p>
+                            </div>
+
+                            <div class="card-body p-4 p-md-5">
+                                <form th:action="@{/caseStudy/submit}" method="post" onsubmit="showLoading()" id="marksForm">
+                                    <div class="row g-4 mb-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold small text-muted text-uppercase">Target Batch</label>
+                                            <div class="input-group shadow-sm">
+                                                <span class="input-group-text bg-transparent border-end-0 border-info"><i class="lucide-users text-info"></i></span>
+                                                <select class="form-select border-start-0 border-info bg-transparent" style="color:var(--text-main);" name="batch" required>
+                                                    <option value="" disabled selected>Select batch...</option>
+                                                    <option th:each="b : ${batches}" th:value="${b}" th:text="${b}"></option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold small text-muted text-uppercase">Case-Study Date</label>
+                                            <div class="input-group shadow-sm">
+                                                <span class="input-group-text bg-transparent border-end-0 border-info"><i class="lucide-calendar text-info"></i></span>
+                                                <input type="date" class="form-control border-start-0 border-info bg-transparent" style="color:var(--text-main);" name="date" id="dateInput" required>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold small text-muted text-uppercase d-flex justify-content-between">
+                                            <span>Roll Numbers & Scores</span>
+                                            <a href="#" class="text-decoration-none small text-danger" onclick="document.getElementById('marksForm').reset(); return false;"><i class="lucide-trash-2" style="width:14px;"></i> Clear Form</a>
+                                        </label>
+                                        <textarea class="form-control shadow-sm border-info bg-transparent p-3" style="color:var(--text-main);"
+                                                  name="rollNoSet" id="rollInput" rows="4" placeholder="59, 33, 12" required></textarea>
+                                        <div class="form-text mt-2 text-muted.">
+                                            Format: Comma separated roll numbers.
+                                        </div>
+                                    </div>
+
+                                    <!-- Validation Errors Container -->
+                                    <div id="errorAlert" class="alert alert-danger d-none mb-4 shadow-sm border-0 border-start border-4 border-danger"></div>
+
+                                    <div class="d-grid mt-4">
+                                        <button type="submit" id="submitBtn" class="btn btn-info text-dark btn-lg py-3 fw-bold rounded-pill shadow-sm" disabled>
+                                            <i class="lucide-save me-2"></i>Save Case-Study Marks
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <th:block th:replace="~{fragments/scripts :: scripts_fragment}"></th:block>
+    
+    <script>
+        function getTodayStr() {
+            const d = new Date();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return d.getFullYear() + '-' + m + '-' + day;
+        }
+
+        function showLoading() { document.getElementById('loader').classList.add('show'); }
+        document.addEventListener('DOMContentLoaded', () => { 
+            const dateInput = document.getElementById('dateInput');
+            dateInput.valueAsDate = new Date(); 
+
+            const form = document.getElementById('marksForm');
+            const batchSelect = form.querySelector('select[name="batch"]');
+            const rollInput = document.getElementById('rollInput');
+            const submitBtn = document.getElementById('submitBtn');
+
+            function validateForm() {
+                const batchOk = batchSelect.value.trim() !== '';
+                const rollsOk = rollInput.value.trim() !== '';
+
+                let errors = [];
+                if(batchSelect.value.trim() !== '') {
+                    // ok
+                } else if(rollsOk) {
+                    errors.push("Please select a target batch.");
+                }
+
+                let dateOk = true;
+                if (dateInput.value && dateInput.value > getTodayStr()) {
+                    dateOk = false;
+                    dateInput.classList.add('is-invalid');
+                    errors.push("Future dates are not allowed. Please select today or a previous date.");
+                } else {
+                    dateInput.classList.remove('is-invalid');
+                }
+
+                let rollValid = false;
+                if (rollInput.value.trim() === '') {
+                    // empty
+                } else if (!/^[A-Za-z0-9,\-\s]+$/.test(rollInput.value)) {
+                    rollInput.classList.add('is-invalid');
+                    errors.push("Invalid format: Only alphanumeric roll numbers, hyphens, and commas are allowed in this form.");
+                } else {
+                    rollValid = true;
+                    rollInput.classList.remove('is-invalid');
+                }
+
+                const errorAlert = document.getElementById('errorAlert');
+                if(errors.length > 0 && (rollsOk || batchOk || dateInput.value > getTodayStr())) {
+                    errorAlert.innerHTML = '<strong><i class="lucide-alert-triangle me-1" style="width:16px;"></i>Please fix the following:</strong><ul class="mb-0 mt-1 small"><li>' + errors.join('</li><li>') + '</li></ul>';
+                    errorAlert.classList.remove('d-none');
+                    if(typeof lucide !== 'undefined') lucide.createIcons();
+                } else {
+                    errorAlert.classList.add('d-none');
+                }
+
+                submitBtn.disabled = !(batchOk && rollValid && dateOk);
+            }
+
+            batchSelect.addEventListener('change', validateForm);
+            rollInput.addEventListener('input', validateForm);
+            dateInput.addEventListener('change', validateForm);
+        });
+    </script>
+</body>
+</html>
